@@ -42,7 +42,7 @@ class YesuDeaVenturesApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Yesu Dea Ventures IMS',
       debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.SALES,
+      initialRoute: AppRoutes.LOGIN, // Setting initial route to LOGIN
       defaultTransition: Transition.fadeIn,
       getPages: AppPages.pages,
       theme: ThemeData(

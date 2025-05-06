@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:yesudua_ventures/app/modules/auth/login_binding.dart';
+import 'package:yesudua_ventures/app/modules/auth/login_view.dart';
 import 'package:yesudua_ventures/app/modules/dashboard/dashboard_binding.dart';
 import 'package:yesudua_ventures/app/modules/dashboard/dashboard_view.dart';
 import 'package:yesudua_ventures/app/modules/debtors/debtors_binding.dart';
@@ -16,6 +18,11 @@ import 'app_routes.dart';
 
 class AppPages {
   static final pages = [
+    GetPage(
+      name: AppRoutes.LOGIN,
+      page: () => const LoginView(),
+      binding: LoginBinding(),
+    ),
     GetPage(
       name: AppRoutes.SALES,
       page: () => SalesView(),

@@ -18,6 +18,9 @@ class SidebarController extends GetxController {
     AppRoutes.REPORTS,
   ];
 
+  // Routes where sidebar should not be visible
+  final List<String> noSidebarRoutes = [AppRoutes.LOGIN];
+
   @override
   void onInit() {
     super.onInit();
@@ -46,12 +49,23 @@ class SidebarController extends GetxController {
   }
 
   void _updateSidebarVisibility() {
-    _showSidebar.value = sidebarRoutes.contains(currentRoute.value);
+    // Show sidebar if the current route is in sidebarRoutes
+    // and not in noSidebarRoutes
+    _showSidebar.value =
+        sidebarRoutes.contains(currentRoute.value) ||
+        (!noSidebarRoutes.contains(currentRoute.value) &&
+            currentRoute.value.isNotEmpty);
     update();
   }
 
   // Getter that can be used with Obx
   bool get shouldShowSidebar => _showSidebar.value;
+
+  // Method to explicitly show sidebar - useful after authentication
+  void showSidebar() {
+    _showSidebar.value = true;
+    update();
+  }
 
   void toggleSidebar() {
     isExpanded.toggle();

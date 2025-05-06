@@ -7,4 +7,5 @@ abstract class AppRoutes {
   static const SUPPLIERS = '/suppliers';
   static const REPORTS = '/reports';
   static const SYNC = '/sync';
+  static const LOGIN = '/login';
 }
