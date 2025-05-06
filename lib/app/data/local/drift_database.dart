@@ -68,7 +68,39 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteInventoryItem(int id) =>
       (delete(inventoryItems)..where((tbl) => tbl.id.equals(id))).go();
 
-  // Similar queries can be added for Sales, Debtors, Suppliers...
+  Future<InventoryItem?> getInventoryItemById(int id) async {
+    return (select(inventoryItems)
+      ..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<Debtor?> getDebtorById(int id) =>
+      (select(debtors)..where((d) => d.id.equals(id))).getSingleOrNull();
+
+  // Sales Queries
+  Future<int> insertSale(SalesCompanion sale) => into(sales).insert(sale);
+  Future<Sale?> getSaleById(int id) =>
+      (select(sales)..where((s) => s.id.equals(id))).getSingleOrNull();
+  Future<List<Sale>> getAllSales() => select(sales).get();
+  Future<bool> updateSale(Sale sale) => update(sales).replace(sale);
+  Future<int> deleteSale(int id) =>
+      (delete(sales)..where((s) => s.id.equals(id))).go();
+
+  Future<int> insertSupplier(SuppliersCompanion supplier) =>
+      into(suppliers).insert(supplier);
+
+  Future<Supplier?> getSupplierById(int id) =>
+      (select(suppliers)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+
+  
+  // Debtors Queries
+  Future<int> insertDebtor(DebtorsCompanion debtor) =>
+      into(debtors).insert(debtor);
+
+  Future<int> updateDebtorPayment(int id, double amountPaid) {
+    return (update(debtors)..where(
+      (tbl) => tbl.id.equals(id),
+    )).write(DebtorsCompanion(amountPaid: Value(amountPaid)));
+  }
 }
 
 // =============================

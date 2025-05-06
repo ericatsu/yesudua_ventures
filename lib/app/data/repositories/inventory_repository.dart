@@ -1,16 +1,14 @@
 import 'package:get/get.dart';
-import 'package:yesudua_ventures/app/data/local/drift_database.dart';
-import 'package:yesudua_ventures/app/data/remote/supabase_service.dart';
-import 'package:yesudua_ventures/app/data/models/inventory_item.dart';
+import '../local/drift_database.dart';
+import '../remote/supabase_service.dart';
 
 class InventoryRepository extends GetxService {
   final AppDatabase _localDb = Get.find();
-  final SupabaseService _supabaseService = Get.find();
+  final SupabaseService _remote = Get.find();
 
-  // Fetch all inventory from local DB
-  Future<List<InventoryItem>> fetchAllInventory() async {
-    final records = await _localDb.getAllInventoryItems();
-    return records
+  Future<List<InventoryItem>> fetchInventory() async {
+    final rows = await _localDb.getAllInventoryItems();
+    return rows
         .map(
           (e) => InventoryItem(
             id: e.id,
@@ -26,25 +24,18 @@ class InventoryRepository extends GetxService {
         .toList();
   }
 
-  // Add item locally and sync remotely
   Future<void> addInventoryItem(InventoryItemsCompanion item) async {
     final id = await _localDb.insertInventoryItem(item);
-    final fullItem = await _localDb.getInventoryItemById(id);
-
-    if (fullItem != null) {
-      await _supabaseService.uploadInventoryItem(fullItem);
-    }
+    final full = await _localDb.getInventoryItemById(id);
+    if (full != null) await _remote.uploadInventoryItem(full);
   }
 
-  // Update inventory locally
   Future<void> updateInventoryItem(InventoryItem item) async {
     await _localDb.updateInventoryItem(item);
-    await _supabaseService.uploadInventoryItem(item);
+    await _remote.uploadInventoryItem(item);
   }
 
-  // Delete inventory item locally
   Future<void> deleteInventoryItem(int id) async {
     await _localDb.deleteInventoryItem(id);
-    // Optionally delete remotely if you implement delete in Supabase
   }
 }
