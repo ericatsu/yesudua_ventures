@@ -15,7 +15,7 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         title: Text(title),

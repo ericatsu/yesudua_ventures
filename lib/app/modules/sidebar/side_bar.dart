@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:yesudua_ventures/app/modules/sidebar/sidebar_controller.dart';
 import 'package:yesudua_ventures/app/routes/app_routes.dart';
 
-class SidebarWidget extends StatelessWidget {
-  const SidebarWidget({super.key});
+class SideBar extends StatelessWidget {
+  const SideBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,7 @@ class SidebarWidget extends StatelessWidget {
 
     return Container(
       width: sidebarWidth,
-      color: theme.colorScheme.primary.withOpacity(0.05),
+      color: theme.colorScheme.primary.withValues(alpha: 0.05),
       child: Column(
         children: [
           // App logo or title area
@@ -48,15 +48,15 @@ class SidebarWidget extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildNavItem(
-                  icon: Icons.dashboard,
-                  title: 'Dashboard',
-                  route: AppRoutes.DASHBOARD,
-                  isCompact: isCompact,
-                ),
-                _buildNavItem(
                   icon: Icons.point_of_sale,
                   title: 'Sales',
                   route: AppRoutes.SALES,
+                  isCompact: isCompact,
+                ),
+                _buildNavItem(
+                  icon: Icons.dashboard,
+                  title: 'Dashboard',
+                  route: AppRoutes.DASHBOARD,
                   isCompact: isCompact,
                 ),
                 _buildNavItem(
@@ -161,7 +161,7 @@ class SidebarWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color:
                   isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      ? theme.colorScheme.primary.withValues(alpha: 0.1)
                       : Colors.transparent,
               border: Border(
                 left: BorderSide(

@@ -23,7 +23,6 @@ void main() async {
   Get.put(SupabaseService()); // Supabase client
   Get.put(ConnectivityService()); // Online status
   Get.put(SyncService()); // Sync triggers on internet
-  
 
   Get.put(SidebarController());
   // Inject repositories
@@ -32,8 +31,6 @@ void main() async {
   Get.put(DebtorsRepository());
   Get.put(SuppliersRepository());
 
-  // Initialize UI-related controller last
-  // This prevents accessing UI properties before they're available
   runApp(const YesuDeaVenturesApp());
 }
 
@@ -45,7 +42,7 @@ class YesuDeaVenturesApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Yesu Dea Ventures IMS',
       debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.DASHBOARD,
+      initialRoute: AppRoutes.SALES,
       defaultTransition: Transition.fadeIn,
       getPages: AppPages.pages,
       theme: ThemeData(
@@ -53,7 +50,7 @@ class YesuDeaVenturesApp extends StatelessWidget {
         useMaterial3: true,
       ),
       builder: (context, child) {
-        return AppLayoutWrapper(child: child!);
+        return AppLayout(child: child!);
       },
     );
   }

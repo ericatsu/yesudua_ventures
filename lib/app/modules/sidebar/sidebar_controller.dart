@@ -10,8 +10,8 @@ class SidebarController extends GetxController {
 
   // Routes where sidebar should be visible
   final List<String> sidebarRoutes = [
-    AppRoutes.DASHBOARD,
     AppRoutes.SALES,
+    AppRoutes.DASHBOARD,
     AppRoutes.INVENTORY,
     AppRoutes.DEBTORS,
     AppRoutes.SUPPLIERS,

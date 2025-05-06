@@ -1,6 +1,6 @@
 abstract class AppRoutes {
-  static const DASHBOARD = '/dashboard';
   static const SHOP = '/shop';
+  static const DASHBOARD = '/dashboard';
   static const INVENTORY = '/inventory';
   static const SALES = '/sales';
   static const DEBTORS = '/debtors';
