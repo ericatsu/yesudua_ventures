@@ -43,7 +43,7 @@ class DashboardView extends GetView<DashboardController> {
                         .map(
                           (product) => ListTile(
                             leading: const Icon(Icons.star),
-                            title: Text(product),
+                            title: Text(product.name),
                           ),
                         )
                         .toList(),

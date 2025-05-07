@@ -44,7 +44,6 @@ class SidebarController extends GetxController {
       if (Get.mediaQuery.size.width < 600) {
         isExpanded.value = false;
       }
-      update(); // Ensure UI updates
     });
   }
 
@@ -55,7 +54,7 @@ class SidebarController extends GetxController {
         sidebarRoutes.contains(currentRoute.value) ||
         (!noSidebarRoutes.contains(currentRoute.value) &&
             currentRoute.value.isNotEmpty);
-    update();
+    // No need for update() call with reactive values
   }
 
   // Getter that can be used with Obx
@@ -64,19 +63,13 @@ class SidebarController extends GetxController {
   // Method to explicitly show sidebar - useful after authentication
   void showSidebar() {
     _showSidebar.value = true;
-    update();
-  }
-
-  void toggleSidebar() {
-    isExpanded.toggle();
-    update(); // Ensure UI updates
+    // No need for update() call with reactive values
   }
 
   // Method to handle logout
   void logout() {
     Get.offAllNamed(AppRoutes.LOGIN);
     _showSidebar.value = false;
-    update();
   }
 
   // Navigation helper
@@ -84,5 +77,11 @@ class SidebarController extends GetxController {
     if (currentRoute.value != route) {
       Get.toNamed(route);
     }
+  }
+
+  @override
+  void onClose() {
+    // Clean up any resources
+    super.onClose();
   }
 }
