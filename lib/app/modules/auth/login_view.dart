@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:yesudua_ventures/app/core/theme/colors.dart';
+import 'package:yesudua_ventures/app/core/utils/assets.dart';
 import 'login_controller.dart';
 
 class LoginView extends GetView<LoginController> {
@@ -7,104 +9,152 @@ class LoginView extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            width: size.width > 600 ? 450 : size.width * 0.9,
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Form(
-                  key: controller.formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Logo or App Name
-                      Icon(
-                        Icons.store,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Yesu Dea Ventures',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Inventory Management System',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Password Field Only
-                      Obx(
-                        () => TextFormField(
-                          controller: controller.passwordController,
-                          obscureText: controller.obscurePassword.value,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock),
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                controller.obscurePassword.value
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: controller.togglePasswordVisibility,
-                            ),
-                          ),
-                          validator: controller.validatePassword,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Login Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: Obx(
-                          () => ElevatedButton(
-                            onPressed:
-                                controller.isLoading.value
-                                    ? null
-                                    : controller.login,
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child:
-                                controller.isLoading.value
-                                    ? const CircularProgressIndicator()
-                                    : const Text(
-                                      'Login',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                          ),
-                        ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration:  BoxDecoration(
+          color: AppColors.background,
+          image: DecorationImage(
+            image: AssetImage(AppAssets.background),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo
+                Image.asset(AppAssets.logo, width: 80, height: 80),
+                const SizedBox(height: 20),
+                // Company Name
+                Text(
+                  'Yesu Dea Ventures',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Login Card
+                Container(
+                  width: 350,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        spreadRadius: 1,
                       ),
                     ],
                   ),
+                  child: Form(
+                    key: controller.formKey,
+                    child: Column(
+                      children: [
+                        // Password Field
+                        Obx(
+                          () => TextFormField(
+                            controller: controller.passwordController,
+                            obscureText: controller.obscurePassword.value,
+                            decoration: InputDecoration(
+                              hintText: 'Password',
+                              filled: true,
+                              fillColor: AppColors.skyBlue,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: AppColors.grey,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  controller.obscurePassword.value
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: AppColors.grey,
+                                ),
+                                onPressed: controller.togglePasswordVisibility,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 16,
+                              ),
+                            ),
+                            validator: controller.validatePassword,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: Obx(
+                            () => ElevatedButton(
+                              onPressed:
+                                  controller.isLoading.value
+                                      ? null
+                                      : controller.login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.background,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                              child:
+                                  controller.isLoading.value
+                                      ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                      : const Text(
+                                        'LOGIN',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Forgot Password Text
+                        TextButton(
+                          onPressed: () {
+                            // Handle forgot password functionality
+                          },
+                          child: const Text(
+                            'Forgot password?',
+                            style: TextStyle(
+                              color: AppColors.background,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

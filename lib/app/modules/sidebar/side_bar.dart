@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:yesudua_ventures/app/core/theme/colors.dart';
 import 'package:yesudua_ventures/app/modules/sidebar/sidebar_controller.dart';
 import 'package:yesudua_ventures/app/routes/app_routes.dart';
 
@@ -25,6 +26,15 @@ class SideBar extends StatelessWidget {
             height: 80,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.background.withValues(alpha: 0.1),
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+            ),
             child:
                 isCompact
                     ? Icon(
@@ -87,11 +97,24 @@ class SideBar extends StatelessWidget {
             ),
           ),
 
-          // User profile or footer area
+          // Divider before user profile section
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+          ),
+
+          // User profile area
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.03),
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment:
+                  isCompact
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
               children: [
                 CircleAvatar(
                   radius: 16,
@@ -133,6 +156,9 @@ class SideBar extends StatelessWidget {
               ],
             ),
           ),
+
+          // Logout button
+          _buildLogoutButton(isCompact, theme),
         ],
       ),
     );
@@ -174,6 +200,10 @@ class SideBar extends StatelessWidget {
               ),
             ),
             child: Row(
+              mainAxisAlignment:
+                  isCompact
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
               children: [
                 Icon(
                   icon,
@@ -194,6 +224,49 @@ class SideBar extends StatelessWidget {
                             isSelected
                                 ? theme.colorScheme.primary
                                 : Colors.grey[800],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLogoutButton(bool isCompact, ThemeData theme) {
+    return GetBuilder<SidebarController>(
+      builder: (controller) {
+        return InkWell(
+          onTap: controller.logout,
+          child: Container(
+            height: 50,
+            padding: EdgeInsets.symmetric(horizontal: isCompact ? 8 : 16),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment:
+                  isCompact
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+              children: [
+                Icon(Icons.logout, size: 22, color: Colors.redAccent),
+                if (!isCompact)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.redAccent,
                       ),
                     ),
                   ),

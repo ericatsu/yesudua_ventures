@@ -72,6 +72,13 @@ class SidebarController extends GetxController {
     update(); // Ensure UI updates
   }
 
+  // Method to handle logout
+  void logout() {
+    Get.offAllNamed(AppRoutes.LOGIN);
+    _showSidebar.value = false;
+    update();
+  }
+
   // Navigation helper
   void navigateTo(String route) {
     if (currentRoute.value != route) {
