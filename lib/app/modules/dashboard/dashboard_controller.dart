@@ -12,23 +12,20 @@ class DashboardController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // Adding worker to react to loading state changes
     ever(isLoading, _handleLoadingState);
 
-    // Simulated load
-    loadSummary();
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadSummary();
+    });
   }
 
-  // Handler for loading state changes
   void _handleLoadingState(bool loading) {
     if (loading) {
-      // Show loading indicator or disable UI
       Get.dialog(
         const Center(child: CircularProgressIndicator()),
         barrierDismissible: false,
       );
     } else {
-      // Hide loading indicator
       if (Get.isDialogOpen ?? false) Get.back();
     }
   }
@@ -37,7 +34,6 @@ class DashboardController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
 
       totalSalesToday.value = 1250.00;
