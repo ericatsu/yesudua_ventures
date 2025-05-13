@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:yesudua_ventures/app/core/utils/logger.dart';
 import 'connectivity_service.dart';
 
 class SyncService extends GetxService {
@@ -15,7 +16,21 @@ class SyncService extends GetxService {
   }
 
   Future<void> syncData() async {
-    // TODO: Pull remote updates and push pending local updates
-    print('Syncing data with cloud...');
+    //Logger.i('Syncing data with cloud...');
+
+    try {
+      await _syncPendingInventoryItems();
+      // Add other sync operations here (sales, debtors, etc.)
+
+      //Logger.s('Sync completed successfully');
+    } catch (e) {
+     // Logger.e('Sync failed: $e');
+    }
+  }
+
+  Future<void> _syncPendingInventoryItems() async {
+    // Implementation will depend on how you track pending items
+    // This is just a placeholder for now
+    //Logger.i('Syncing pending inventory items...');
   }
 }

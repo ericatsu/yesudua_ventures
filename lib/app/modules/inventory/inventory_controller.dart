@@ -381,4 +381,14 @@ class InventoryController extends GetxController {
     searchQuery.value = '';
     filteredItems.value = items;
   }
+
+  // Get item by ID - needed for edit functionality
+  Future<InventoryItem?> getItemById(int id) async {
+    try {
+      return await _repository.getItemById(id);
+    } catch (e) {
+      SnackbarUtils.showError('Error', 'Failed to fetch item: ${e.toString()}');
+      return null;
+    }
+  }
 }

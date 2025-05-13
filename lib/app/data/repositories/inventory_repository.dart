@@ -46,7 +46,12 @@ class InventoryRepository extends GetxService {
 
       // Upload to Supabase
       if (success) {
-        await _remote.uploadInventoryItem(driftItem);
+        try {
+          await _remote.uploadInventoryItem(driftItem);
+        } catch (e) {
+          // Log the error but don't fail the operation
+          print('Remote sync failed, will try again later: $e');
+        }
       }
 
       return success;
