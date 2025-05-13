@@ -14,7 +14,7 @@ class Logger {
   /// Logs an info message to the console.
   ///
   /// Only prints in debug mode.
-  static void i(String tag, String message) {
+  static void i(String tag, [String message = '']) {
     if (kDebugMode) {
       print('INFO | $tag | $message');
     }
@@ -46,6 +46,15 @@ class Logger {
       if (stackTrace != null) {
         print('ERROR | $tag | Stack Trace: $stackTrace');
       }
+    }
+  }
+
+  /// Logs a success message to the console.
+  ///
+  /// Only prints in debug mode.
+  static void s(String tag, [String message = '']) {
+    if (kDebugMode) {
+      print('SUCCESS | $tag | $message');
     }
   }
 }

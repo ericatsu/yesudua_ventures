@@ -108,6 +108,21 @@ class $InventoryItemsTable extends InventoryItems
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _needsSyncMeta = const VerificationMeta(
+    'needsSync',
+  );
+  @override
+  late final GeneratedColumn<bool> needsSync = GeneratedColumn<bool>(
+    'needs_sync',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_sync" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -119,6 +134,7 @@ class $InventoryItemsTable extends InventoryItems
     supplier,
     imageKey,
     lastUpdated,
+    needsSync,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -199,6 +215,12 @@ class $InventoryItemsTable extends InventoryItems
         ),
       );
     }
+    if (data.containsKey('needs_sync')) {
+      context.handle(
+        _needsSyncMeta,
+        needsSync.isAcceptableOrUnknown(data['needs_sync']!, _needsSyncMeta),
+      );
+    }
     return context;
   }
 
@@ -250,6 +272,11 @@ class $InventoryItemsTable extends InventoryItems
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_updated'],
       ),
+      needsSync:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}needs_sync'],
+          )!,
     );
   }
 
@@ -269,6 +296,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
   final String? supplier;
   final String? imageKey;
   final DateTime? lastUpdated;
+  final bool needsSync;
   const InventoryItem({
     required this.id,
     required this.name,
@@ -279,6 +307,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     this.supplier,
     this.imageKey,
     this.lastUpdated,
+    required this.needsSync,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -298,6 +327,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     if (!nullToAbsent || lastUpdated != null) {
       map['last_updated'] = Variable<DateTime>(lastUpdated);
     }
+    map['needs_sync'] = Variable<bool>(needsSync);
     return map;
   }
 
@@ -321,6 +351,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           lastUpdated == null && nullToAbsent
               ? const Value.absent()
               : Value(lastUpdated),
+      needsSync: Value(needsSync),
     );
   }
 
@@ -339,6 +370,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       supplier: serializer.fromJson<String?>(json['supplier']),
       imageKey: serializer.fromJson<String?>(json['imageKey']),
       lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
+      needsSync: serializer.fromJson<bool>(json['needsSync']),
     );
   }
   @override
@@ -354,6 +386,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       'supplier': serializer.toJson<String?>(supplier),
       'imageKey': serializer.toJson<String?>(imageKey),
       'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
+      'needsSync': serializer.toJson<bool>(needsSync),
     };
   }
 
@@ -367,6 +400,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     Value<String?> supplier = const Value.absent(),
     Value<String?> imageKey = const Value.absent(),
     Value<DateTime?> lastUpdated = const Value.absent(),
+    bool? needsSync,
   }) => InventoryItem(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -377,6 +411,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     supplier: supplier.present ? supplier.value : this.supplier,
     imageKey: imageKey.present ? imageKey.value : this.imageKey,
     lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
+    needsSync: needsSync ?? this.needsSync,
   );
   InventoryItem copyWithCompanion(InventoryItemsCompanion data) {
     return InventoryItem(
@@ -391,6 +426,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       imageKey: data.imageKey.present ? data.imageKey.value : this.imageKey,
       lastUpdated:
           data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
+      needsSync: data.needsSync.present ? data.needsSync.value : this.needsSync,
     );
   }
 
@@ -405,7 +441,8 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           ..write('sellPrice: $sellPrice, ')
           ..write('supplier: $supplier, ')
           ..write('imageKey: $imageKey, ')
-          ..write('lastUpdated: $lastUpdated')
+          ..write('lastUpdated: $lastUpdated, ')
+          ..write('needsSync: $needsSync')
           ..write(')'))
         .toString();
   }
@@ -421,6 +458,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     supplier,
     imageKey,
     lastUpdated,
+    needsSync,
   );
   @override
   bool operator ==(Object other) =>
@@ -434,7 +472,8 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           other.sellPrice == this.sellPrice &&
           other.supplier == this.supplier &&
           other.imageKey == this.imageKey &&
-          other.lastUpdated == this.lastUpdated);
+          other.lastUpdated == this.lastUpdated &&
+          other.needsSync == this.needsSync);
 }
 
 class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
@@ -447,6 +486,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
   final Value<String?> supplier;
   final Value<String?> imageKey;
   final Value<DateTime?> lastUpdated;
+  final Value<bool> needsSync;
   const InventoryItemsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -457,6 +497,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     this.supplier = const Value.absent(),
     this.imageKey = const Value.absent(),
     this.lastUpdated = const Value.absent(),
+    this.needsSync = const Value.absent(),
   });
   InventoryItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -468,6 +509,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     this.supplier = const Value.absent(),
     this.imageKey = const Value.absent(),
     this.lastUpdated = const Value.absent(),
+    this.needsSync = const Value.absent(),
   }) : name = Value(name),
        category = Value(category),
        quantity = Value(quantity),
@@ -483,6 +525,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Expression<String>? supplier,
     Expression<String>? imageKey,
     Expression<DateTime>? lastUpdated,
+    Expression<bool>? needsSync,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -494,6 +537,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       if (supplier != null) 'supplier': supplier,
       if (imageKey != null) 'image_key': imageKey,
       if (lastUpdated != null) 'last_updated': lastUpdated,
+      if (needsSync != null) 'needs_sync': needsSync,
     });
   }
 
@@ -507,6 +551,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Value<String?>? supplier,
     Value<String?>? imageKey,
     Value<DateTime?>? lastUpdated,
+    Value<bool>? needsSync,
   }) {
     return InventoryItemsCompanion(
       id: id ?? this.id,
@@ -518,6 +563,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       supplier: supplier ?? this.supplier,
       imageKey: imageKey ?? this.imageKey,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      needsSync: needsSync ?? this.needsSync,
     );
   }
 
@@ -551,6 +597,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     if (lastUpdated.present) {
       map['last_updated'] = Variable<DateTime>(lastUpdated.value);
     }
+    if (needsSync.present) {
+      map['needs_sync'] = Variable<bool>(needsSync.value);
+    }
     return map;
   }
 
@@ -565,7 +614,8 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
           ..write('sellPrice: $sellPrice, ')
           ..write('supplier: $supplier, ')
           ..write('imageKey: $imageKey, ')
-          ..write('lastUpdated: $lastUpdated')
+          ..write('lastUpdated: $lastUpdated, ')
+          ..write('needsSync: $needsSync')
           ..write(')'))
         .toString();
   }
@@ -1792,6 +1842,7 @@ typedef $$InventoryItemsTableCreateCompanionBuilder =
       Value<String?> supplier,
       Value<String?> imageKey,
       Value<DateTime?> lastUpdated,
+      Value<bool> needsSync,
     });
 typedef $$InventoryItemsTableUpdateCompanionBuilder =
     InventoryItemsCompanion Function({
@@ -1804,6 +1855,7 @@ typedef $$InventoryItemsTableUpdateCompanionBuilder =
       Value<String?> supplier,
       Value<String?> imageKey,
       Value<DateTime?> lastUpdated,
+      Value<bool> needsSync,
     });
 
 class $$InventoryItemsTableFilterComposer
@@ -1857,6 +1909,11 @@ class $$InventoryItemsTableFilterComposer
 
   ColumnFilters<DateTime> get lastUpdated => $composableBuilder(
     column: $table.lastUpdated,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsSync => $composableBuilder(
+    column: $table.needsSync,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1914,6 +1971,11 @@ class $$InventoryItemsTableOrderingComposer
     column: $table.lastUpdated,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get needsSync => $composableBuilder(
+    column: $table.needsSync,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$InventoryItemsTableAnnotationComposer
@@ -1955,6 +2017,9 @@ class $$InventoryItemsTableAnnotationComposer
     column: $table.lastUpdated,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get needsSync =>
+      $composableBuilder(column: $table.needsSync, builder: (column) => column);
 }
 
 class $$InventoryItemsTableTableManager
@@ -2003,6 +2068,7 @@ class $$InventoryItemsTableTableManager
                 Value<String?> supplier = const Value.absent(),
                 Value<String?> imageKey = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
+                Value<bool> needsSync = const Value.absent(),
               }) => InventoryItemsCompanion(
                 id: id,
                 name: name,
@@ -2013,6 +2079,7 @@ class $$InventoryItemsTableTableManager
                 supplier: supplier,
                 imageKey: imageKey,
                 lastUpdated: lastUpdated,
+                needsSync: needsSync,
               ),
           createCompanionCallback:
               ({
@@ -2025,6 +2092,7 @@ class $$InventoryItemsTableTableManager
                 Value<String?> supplier = const Value.absent(),
                 Value<String?> imageKey = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
+                Value<bool> needsSync = const Value.absent(),
               }) => InventoryItemsCompanion.insert(
                 id: id,
                 name: name,
@@ -2035,6 +2103,7 @@ class $$InventoryItemsTableTableManager
                 supplier: supplier,
                 imageKey: imageKey,
                 lastUpdated: lastUpdated,
+                needsSync: needsSync,
               ),
           withReferenceMapper:
               (p0) =>

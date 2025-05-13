@@ -18,8 +18,9 @@ class InventoryItems extends Table {
   RealColumn get boughtPrice => real()();
   RealColumn get sellPrice => real()();
   TextColumn get supplier => text().nullable()();
-  TextColumn get imageKey => text().nullable()(); 
+  TextColumn get imageKey => text().nullable()();
   DateTimeColumn get lastUpdated => dateTime().nullable()();
+  BoolColumn get needsSync => boolean().withDefault(const Constant(false))();
 }
 
 class Sales extends Table {
@@ -74,6 +75,27 @@ class AppDatabase extends _$AppDatabase {
       ..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
+  // Mark item for syncing
+  // Mark item for syncing - Fixed version
+  Future<void> markItemForSync(int id) async {
+    await (update(inventoryItems)..where(
+      (tbl) => tbl.id.equals(id),
+    )).write(const InventoryItemsCompanion(needsSync: Value(true)));
+  }
+
+  // Mark item as synced - Fixed version
+  Future<void> markItemAsSynced(int id) async {
+    await (update(inventoryItems)..where(
+      (tbl) => tbl.id.equals(id),
+    )).write(const InventoryItemsCompanion(needsSync: Value(false)));
+  }
+
+  // Get items that need syncing
+  Future<List<InventoryItem>> getPendingSyncItems() async {
+    return (select(inventoryItems)
+      ..where((tbl) => tbl.needsSync.equals(true))).get();
+  }
+
   // Sales Queries
   Future<int> insertSale(SalesCompanion sale) => into(sales).insert(sale);
   Future<Sale?> getSaleById(int id) =>
@@ -89,7 +111,6 @@ class AppDatabase extends _$AppDatabase {
   Future<Supplier?> getSupplierById(int id) =>
       (select(suppliers)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
 
-  
   // Debtors Queries
   Future<Debtor?> getDebtorById(int id) =>
       (select(debtors)..where((d) => d.id.equals(id))).getSingleOrNull();
