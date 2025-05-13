@@ -18,6 +18,7 @@ class InventoryItems extends Table {
   RealColumn get boughtPrice => real()();
   RealColumn get sellPrice => real()();
   TextColumn get supplier => text().nullable()();
+  TextColumn get imageKey => text().nullable()(); 
   DateTimeColumn get lastUpdated => dateTime().nullable()();
 }
 
@@ -73,9 +74,6 @@ class AppDatabase extends _$AppDatabase {
       ..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
   }
 
-  Future<Debtor?> getDebtorById(int id) =>
-      (select(debtors)..where((d) => d.id.equals(id))).getSingleOrNull();
-
   // Sales Queries
   Future<int> insertSale(SalesCompanion sale) => into(sales).insert(sale);
   Future<Sale?> getSaleById(int id) =>
@@ -93,6 +91,9 @@ class AppDatabase extends _$AppDatabase {
 
   
   // Debtors Queries
+  Future<Debtor?> getDebtorById(int id) =>
+      (select(debtors)..where((d) => d.id.equals(id))).getSingleOrNull();
+
   Future<int> insertDebtor(DebtorsCompanion debtor) =>
       into(debtors).insert(debtor);
 

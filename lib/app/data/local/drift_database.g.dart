@@ -86,6 +86,17 @@ class $InventoryItemsTable extends InventoryItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageKeyMeta = const VerificationMeta(
+    'imageKey',
+  );
+  @override
+  late final GeneratedColumn<String> imageKey = GeneratedColumn<String>(
+    'image_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastUpdatedMeta = const VerificationMeta(
     'lastUpdated',
   );
@@ -106,6 +117,7 @@ class $InventoryItemsTable extends InventoryItems
     boughtPrice,
     sellPrice,
     supplier,
+    imageKey,
     lastUpdated,
   ];
   @override
@@ -172,6 +184,12 @@ class $InventoryItemsTable extends InventoryItems
         supplier.isAcceptableOrUnknown(data['supplier']!, _supplierMeta),
       );
     }
+    if (data.containsKey('image_key')) {
+      context.handle(
+        _imageKeyMeta,
+        imageKey.isAcceptableOrUnknown(data['image_key']!, _imageKeyMeta),
+      );
+    }
     if (data.containsKey('last_updated')) {
       context.handle(
         _lastUpdatedMeta,
@@ -224,6 +242,10 @@ class $InventoryItemsTable extends InventoryItems
         DriftSqlType.string,
         data['${effectivePrefix}supplier'],
       ),
+      imageKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_key'],
+      ),
       lastUpdated: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_updated'],
@@ -245,6 +267,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
   final double boughtPrice;
   final double sellPrice;
   final String? supplier;
+  final String? imageKey;
   final DateTime? lastUpdated;
   const InventoryItem({
     required this.id,
@@ -254,6 +277,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     required this.boughtPrice,
     required this.sellPrice,
     this.supplier,
+    this.imageKey,
     this.lastUpdated,
   });
   @override
@@ -267,6 +291,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     map['sell_price'] = Variable<double>(sellPrice);
     if (!nullToAbsent || supplier != null) {
       map['supplier'] = Variable<String>(supplier);
+    }
+    if (!nullToAbsent || imageKey != null) {
+      map['image_key'] = Variable<String>(imageKey);
     }
     if (!nullToAbsent || lastUpdated != null) {
       map['last_updated'] = Variable<DateTime>(lastUpdated);
@@ -286,6 +313,10 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           supplier == null && nullToAbsent
               ? const Value.absent()
               : Value(supplier),
+      imageKey:
+          imageKey == null && nullToAbsent
+              ? const Value.absent()
+              : Value(imageKey),
       lastUpdated:
           lastUpdated == null && nullToAbsent
               ? const Value.absent()
@@ -306,6 +337,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       boughtPrice: serializer.fromJson<double>(json['boughtPrice']),
       sellPrice: serializer.fromJson<double>(json['sellPrice']),
       supplier: serializer.fromJson<String?>(json['supplier']),
+      imageKey: serializer.fromJson<String?>(json['imageKey']),
       lastUpdated: serializer.fromJson<DateTime?>(json['lastUpdated']),
     );
   }
@@ -320,6 +352,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       'boughtPrice': serializer.toJson<double>(boughtPrice),
       'sellPrice': serializer.toJson<double>(sellPrice),
       'supplier': serializer.toJson<String?>(supplier),
+      'imageKey': serializer.toJson<String?>(imageKey),
       'lastUpdated': serializer.toJson<DateTime?>(lastUpdated),
     };
   }
@@ -332,6 +365,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     double? boughtPrice,
     double? sellPrice,
     Value<String?> supplier = const Value.absent(),
+    Value<String?> imageKey = const Value.absent(),
     Value<DateTime?> lastUpdated = const Value.absent(),
   }) => InventoryItem(
     id: id ?? this.id,
@@ -341,6 +375,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     boughtPrice: boughtPrice ?? this.boughtPrice,
     sellPrice: sellPrice ?? this.sellPrice,
     supplier: supplier.present ? supplier.value : this.supplier,
+    imageKey: imageKey.present ? imageKey.value : this.imageKey,
     lastUpdated: lastUpdated.present ? lastUpdated.value : this.lastUpdated,
   );
   InventoryItem copyWithCompanion(InventoryItemsCompanion data) {
@@ -353,6 +388,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           data.boughtPrice.present ? data.boughtPrice.value : this.boughtPrice,
       sellPrice: data.sellPrice.present ? data.sellPrice.value : this.sellPrice,
       supplier: data.supplier.present ? data.supplier.value : this.supplier,
+      imageKey: data.imageKey.present ? data.imageKey.value : this.imageKey,
       lastUpdated:
           data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
     );
@@ -368,6 +404,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           ..write('boughtPrice: $boughtPrice, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('supplier: $supplier, ')
+          ..write('imageKey: $imageKey, ')
           ..write('lastUpdated: $lastUpdated')
           ..write(')'))
         .toString();
@@ -382,6 +419,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     boughtPrice,
     sellPrice,
     supplier,
+    imageKey,
     lastUpdated,
   );
   @override
@@ -395,6 +433,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           other.boughtPrice == this.boughtPrice &&
           other.sellPrice == this.sellPrice &&
           other.supplier == this.supplier &&
+          other.imageKey == this.imageKey &&
           other.lastUpdated == this.lastUpdated);
 }
 
@@ -406,6 +445,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
   final Value<double> boughtPrice;
   final Value<double> sellPrice;
   final Value<String?> supplier;
+  final Value<String?> imageKey;
   final Value<DateTime?> lastUpdated;
   const InventoryItemsCompanion({
     this.id = const Value.absent(),
@@ -415,6 +455,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     this.boughtPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
     this.supplier = const Value.absent(),
+    this.imageKey = const Value.absent(),
     this.lastUpdated = const Value.absent(),
   });
   InventoryItemsCompanion.insert({
@@ -425,6 +466,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     required double boughtPrice,
     required double sellPrice,
     this.supplier = const Value.absent(),
+    this.imageKey = const Value.absent(),
     this.lastUpdated = const Value.absent(),
   }) : name = Value(name),
        category = Value(category),
@@ -439,6 +481,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Expression<double>? boughtPrice,
     Expression<double>? sellPrice,
     Expression<String>? supplier,
+    Expression<String>? imageKey,
     Expression<DateTime>? lastUpdated,
   }) {
     return RawValuesInsertable({
@@ -449,6 +492,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       if (boughtPrice != null) 'bought_price': boughtPrice,
       if (sellPrice != null) 'sell_price': sellPrice,
       if (supplier != null) 'supplier': supplier,
+      if (imageKey != null) 'image_key': imageKey,
       if (lastUpdated != null) 'last_updated': lastUpdated,
     });
   }
@@ -461,6 +505,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Value<double>? boughtPrice,
     Value<double>? sellPrice,
     Value<String?>? supplier,
+    Value<String?>? imageKey,
     Value<DateTime?>? lastUpdated,
   }) {
     return InventoryItemsCompanion(
@@ -471,6 +516,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       boughtPrice: boughtPrice ?? this.boughtPrice,
       sellPrice: sellPrice ?? this.sellPrice,
       supplier: supplier ?? this.supplier,
+      imageKey: imageKey ?? this.imageKey,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
@@ -499,6 +545,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     if (supplier.present) {
       map['supplier'] = Variable<String>(supplier.value);
     }
+    if (imageKey.present) {
+      map['image_key'] = Variable<String>(imageKey.value);
+    }
     if (lastUpdated.present) {
       map['last_updated'] = Variable<DateTime>(lastUpdated.value);
     }
@@ -515,6 +564,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
           ..write('boughtPrice: $boughtPrice, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('supplier: $supplier, ')
+          ..write('imageKey: $imageKey, ')
           ..write('lastUpdated: $lastUpdated')
           ..write(')'))
         .toString();
@@ -1740,6 +1790,7 @@ typedef $$InventoryItemsTableCreateCompanionBuilder =
       required double boughtPrice,
       required double sellPrice,
       Value<String?> supplier,
+      Value<String?> imageKey,
       Value<DateTime?> lastUpdated,
     });
 typedef $$InventoryItemsTableUpdateCompanionBuilder =
@@ -1751,6 +1802,7 @@ typedef $$InventoryItemsTableUpdateCompanionBuilder =
       Value<double> boughtPrice,
       Value<double> sellPrice,
       Value<String?> supplier,
+      Value<String?> imageKey,
       Value<DateTime?> lastUpdated,
     });
 
@@ -1795,6 +1847,11 @@ class $$InventoryItemsTableFilterComposer
 
   ColumnFilters<String> get supplier => $composableBuilder(
     column: $table.supplier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageKey => $composableBuilder(
+    column: $table.imageKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1848,6 +1905,11 @@ class $$InventoryItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageKey => $composableBuilder(
+    column: $table.imageKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastUpdated => $composableBuilder(
     column: $table.lastUpdated,
     builder: (column) => ColumnOrderings(column),
@@ -1885,6 +1947,9 @@ class $$InventoryItemsTableAnnotationComposer
 
   GeneratedColumn<String> get supplier =>
       $composableBuilder(column: $table.supplier, builder: (column) => column);
+
+  GeneratedColumn<String> get imageKey =>
+      $composableBuilder(column: $table.imageKey, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastUpdated => $composableBuilder(
     column: $table.lastUpdated,
@@ -1936,6 +2001,7 @@ class $$InventoryItemsTableTableManager
                 Value<double> boughtPrice = const Value.absent(),
                 Value<double> sellPrice = const Value.absent(),
                 Value<String?> supplier = const Value.absent(),
+                Value<String?> imageKey = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
               }) => InventoryItemsCompanion(
                 id: id,
@@ -1945,6 +2011,7 @@ class $$InventoryItemsTableTableManager
                 boughtPrice: boughtPrice,
                 sellPrice: sellPrice,
                 supplier: supplier,
+                imageKey: imageKey,
                 lastUpdated: lastUpdated,
               ),
           createCompanionCallback:
@@ -1956,6 +2023,7 @@ class $$InventoryItemsTableTableManager
                 required double boughtPrice,
                 required double sellPrice,
                 Value<String?> supplier = const Value.absent(),
+                Value<String?> imageKey = const Value.absent(),
                 Value<DateTime?> lastUpdated = const Value.absent(),
               }) => InventoryItemsCompanion.insert(
                 id: id,
@@ -1965,6 +2033,7 @@ class $$InventoryItemsTableTableManager
                 boughtPrice: boughtPrice,
                 sellPrice: sellPrice,
                 supplier: supplier,
+                imageKey: imageKey,
                 lastUpdated: lastUpdated,
               ),
           withReferenceMapper:

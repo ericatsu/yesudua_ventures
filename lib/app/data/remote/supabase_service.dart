@@ -26,6 +26,7 @@ class SupabaseService extends GetxService {
       'sell_price': item.sellPrice,
       'supplier': item.supplier,
       'last_updated': item.lastUpdated?.toIso8601String(),
+      'image_key': item.imageKey,
     });
 
     if (response.error != null) {
