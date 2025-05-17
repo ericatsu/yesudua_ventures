@@ -20,6 +20,17 @@ class ReceiptView extends StatelessWidget {
     this.onToggleReceiptType,
   });
 
+  double _calculateTotalAmount(
+    List<SaleItemModel> items, [
+    bool formatted = true,
+  ]) {
+    final total = items.fold(
+      0.0,
+      (sum, item) => sum + (item.quantity * item.sellPrice),
+    );
+    return formatted ? double.parse(total.toStringAsFixed(2)) : total;
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SalesController>();
@@ -83,122 +94,87 @@ class ReceiptView extends StatelessWidget {
               const Divider(),
 
               // Items Table
-              Table(
-                border: TableBorder.all(color: Colors.grey.shade300),
-                columnWidths: const {
-                  0: FlexColumnWidth(4), // Item
-                  1: FlexColumnWidth(1), // Qty
-                  2: FlexColumnWidth(2), // Price
-                  3: FlexColumnWidth(2), // Total
-                  // Add bought price column only for internal copy
-                  4: FlexColumnWidth(2), // Bought Price (internal only)
-                },
-                children: [
-                  // Table Header
-                  TableRow(
-                    decoration: BoxDecoration(color: Colors.grey.shade200),
-                    children:
-                        [
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Item',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Qty',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Price',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Total',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          if (!receipt.isCustomerCopy)
+              Obx(
+                () => Table(
+                  border: TableBorder.all(color: Colors.grey.shade300),
+                  columnWidths: const {
+                    0: FlexColumnWidth(4), // Item
+                    1: FlexColumnWidth(1), // Qty
+                    2: FlexColumnWidth(2), // Price
+                    3: FlexColumnWidth(2), // Total
+                    //4: FlexColumnWidth(2),
+                  },
+                  children: [
+                    // Table Header
+                    TableRow(
+                      decoration: BoxDecoration(color: Colors.grey.shade200),
+                      children:
+                          [
                             const Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text(
-                                'Bought',
+                                'Item',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
-                        ].where((widget) => widget != null).toList(),
-                  ),
-
-                  // Table Rows for Items
-                  ...receipt.items.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-
-                    return TableRow(
-                      children:
-                          [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(item.itemName ?? 'Unknown Item'),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(item.quantity.toString()),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child:
-                                  receipt.isPreviewMode && allowEditing
-                                      ? TextFormField(
-                                        initialValue: item.sellPrice.toString(),
-                                        keyboardType: TextInputType.number,
-                                        decoration: const InputDecoration(
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 8,
-                                          ),
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        onChanged: (value) {
-                                          if (value.isNotEmpty) {
-                                            final newPrice =
-                                                double.tryParse(value) ??
-                                                item.sellPrice;
-                                            controller.updateItemPrice(
-                                              index,
-                                              newPrice,
-                                            );
-                                          }
-                                        },
-                                      )
-                                      : Text(
-                                        item.sellPrice.toStringAsFixed(2),
-                                      ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
                               child: Text(
-                                (item.quantity * item.sellPrice).toStringAsFixed(2),
+                                'Qty',
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
-                            if (!receipt.isCustomerCopy)
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                'Price',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                'Total',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            // if (!receipt.isCustomerCopy)
+                            //   const Padding(
+                            //     padding: EdgeInsets.all(8.0),
+                            //     child: Text(
+                            //       'Bought',
+                            //       style: TextStyle(fontWeight: FontWeight.bold),
+                            //     ),
+                            //   ),
+                          ].where((widget) => widget != null).toList(),
+                    ),
+
+                    // Table Rows for Items
+                    ...receipt.items.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+
+                      return TableRow(
+                        children:
+                            [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(item.itemName ?? 'Unknown Item'),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(item.quantity.toString()),
+                              ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child:
-                                    receipt.isPreviewMode && allowEditing
+                                    // Only allow editing if in preview mode, allowing editing, and is customer copy
+                                    receipt.isPreviewMode &&
+                                            allowEditing &&
+                                            receipt.isCustomerCopy
                                         ? TextFormField(
                                           initialValue:
-                                              item.boughtPrice.toString(),
+                                              item.sellPrice.toString(),
                                           keyboardType: TextInputType.number,
                                           decoration: const InputDecoration(
                                             isDense: true,
@@ -211,24 +187,67 @@ class ReceiptView extends StatelessWidget {
                                           ),
                                           onChanged: (value) {
                                             if (value.isNotEmpty) {
-                                              final newBoughtPrice =
+                                              final newPrice =
                                                   double.tryParse(value) ??
-                                                  item.boughtPrice;
-                                              controller.updateItemBoughtPrice(
+                                                  item.sellPrice;
+                                              controller.updateItemPrice(
                                                 index,
-                                                newBoughtPrice,
+                                                newPrice,
                                               );
                                             }
                                           },
                                         )
                                         : Text(
-                                          item.boughtPrice.toStringAsFixed(2),
+                                          item.sellPrice.toStringAsFixed(2),
                                         ),
                               ),
-                          ].where((widget) => widget != null).toList(),
-                    );
-                  }),
-                ],
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  (item.quantity * item.sellPrice)
+                                      .toStringAsFixed(2),
+                                ),
+                              ),
+                              // if (!receipt.isCustomerCopy)
+                              //   Padding(
+                              //     padding: const EdgeInsets.all(8.0),
+                              //     child:
+                              //         receipt.isPreviewMode && allowEditing
+                              //             ? TextFormField(
+                              //               initialValue:
+                              //                   item.boughtPrice.toString(),
+                              //               keyboardType: TextInputType.number,
+                              //               decoration: const InputDecoration(
+                              //                 isDense: true,
+                              //                 contentPadding:
+                              //                     EdgeInsets.symmetric(
+                              //                       horizontal: 8,
+                              //                       vertical: 8,
+                              //                     ),
+                              //                 border: OutlineInputBorder(),
+                              //               ),
+                              //               onChanged: (value) {
+                              //                 if (value.isNotEmpty) {
+                              //                   final newBoughtPrice =
+                              //                       double.tryParse(value) ??
+                              //                       item.boughtPrice;
+                              //                   controller
+                              //                       .updateItemBoughtPrice(
+                              //                         index,
+                              //                         newBoughtPrice,
+                              //                       );
+                              //                 }
+                              //               },
+                              //             )
+                              //             : Text(
+                              //               item.boughtPrice.toStringAsFixed(2),
+                              //             ),
+                              //   ),
+                            ]
+                      );
+                    }),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 20),
@@ -236,86 +255,99 @@ class ReceiptView extends StatelessWidget {
               // Summary and Totals
               Align(
                 alignment: Alignment.centerRight,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Total Amount: GHS ${receipt.sale.totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
+                child: Obx(
+                  () => Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Total Amount: GHS ${receipt.isCustomerCopy ? _calculateTotalAmount(receipt.items) : receipt.sale.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
 
-                    if (receipt.isPreviewMode && allowEditing) ...[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Amount Paid: GHS ',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: TextFormField(
-                              initialValue:
-                                  receipt.editedPaidAmount?.toString() ??
-                                  receipt.sale.paidAmount.toString(),
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 8,
-                                ),
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) {
-                                if (value.isNotEmpty) {
-                                  final newPaidAmount =
-                                      double.tryParse(value) ?? 0.0;
-                                  controller.paidAmount.value = newPaidAmount;
-                                  controller.isPaid.value =
-                                      newPaidAmount >= receipt.sale.totalAmount;
-                                }
-                              },
+                      if (receipt.isPreviewMode && allowEditing) ...[
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Amount Paid: GHS ',
+                              style: TextStyle(fontWeight: FontWeight.w500),
                             ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      Text(
-                        'Amount Paid: GHS ${receipt.sale.paidAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                            SizedBox(
+                              width: 100,
+                              child: TextFormField(
+                                initialValue:
+                                    receipt.editedPaidAmount?.toString() ??
+                                    receipt.sale.paidAmount.toString(),
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  if (value.isNotEmpty) {
+                                    final newPaidAmount =
+                                        double.tryParse(value) ?? 0.0;
+                                    controller.paidAmount.value = newPaidAmount;
+                                    controller.isPaid.value =
+                                        newPaidAmount >=
+                                        (receipt.isCustomerCopy
+                                            ? _calculateTotalAmount(
+                                              receipt.items,
+                                              false,
+                                            )
+                                            : receipt.sale.totalAmount);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        Text(
+                          'Amount Paid: GHS ${receipt.sale.paidAmount.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
 
-                    const SizedBox(height: 4),
-                    Text(
-                      'Balance: GHS ${(receipt.sale.totalAmount - (receipt.editedPaidAmount ?? receipt.sale.paidAmount)).toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color:
-                            (receipt.sale.totalAmount -
-                                        (receipt.editedPaidAmount ??
-                                            receipt.sale.paidAmount)) >
-                                    0
-                                ? Colors.red
-                                : Colors.green,
-                      ),
-                    ),
-
-                    // Show profit only in internal copy
-                    if (!receipt.isCustomerCopy) ...[
-                      const SizedBox(height: 10),
-                      const Divider(),
+                      const SizedBox(height: 4),
                       Text(
-                        'Total Profit: GHS ${receipt.totalProfit.toStringAsFixed(2)}',
-                        style: const TextStyle(
+                        'Balance: GHS ${(receipt.isCustomerCopy ? _calculateTotalAmount(receipt.items, false) : receipt.sale.totalAmount - controller.paidAmount.value).toStringAsFixed(2)}',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color:
+                              (receipt.isCustomerCopy
+                                          ? _calculateTotalAmount(
+                                                receipt.items,
+                                                false,
+                                              ) -
+                                              controller.paidAmount.value
+                                          : receipt.sale.totalAmount -
+                                              controller.paidAmount.value) >
+                                      0
+                                  ? Colors.red
+                                  : Colors.green,
                         ),
                       ),
+
+                      // Show profit only in internal copy
+                      if (!receipt.isCustomerCopy) ...[
+                        const SizedBox(height: 10),
+                        const Divider(),
+                        // Text(
+                        //   'Total Profit: GHS ${receipt.totalProfit.toStringAsFixed(2)}',
+                        //   style: const TextStyle(
+                        //     fontWeight: FontWeight.bold,
+                        //     color: Colors.blue,
+                        //   ),
+                        // ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
 
