@@ -35,12 +35,14 @@ dependencies:
   url_launcher: ^6.3.1
   flutter_dotenv: ^5.2.1
   get: ^4.7.2
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   drift_dev: ^2.26.0
   build_runner: ^2.4.15
+  json_serializable: ^6.9.5
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

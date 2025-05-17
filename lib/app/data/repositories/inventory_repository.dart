@@ -1,199 +1,561 @@
-import 'package:get/get.dart';
-import '../local/drift_database.dart' as drift;
-import '../models/inventory_item.dart';
-import '../remote/supabase_service.dart';
-import '../../core/services/connectivity_service.dart';
-import '../../core/utils/logger.dart';
+import 'package:drift/drift.dart';
+import 'package:yesudua_ventures/app/data/local/app_database.dart';
+import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 
-class InventoryRepository extends GetxService {
-  final drift.AppDatabase _local = Get.find();
-  final SupabaseService _remote = Get.find();
-  final ConnectivityService _connectivityService = Get.find();
+// Abstract repository interface following SOLID principles
+abstract class InventoryRepository {
+  // Inventory Items
+  Future<List<InventoryItemModel>> getAllInventoryItems();
+  Stream<List<InventoryItemModel>> watchAllInventoryItems();
+  Future<InventoryItemModel?> getInventoryItemById(int id);
+  Future<int> addInventoryItem(InventoryItemModel item);
+  Future<bool> updateInventoryItem(InventoryItemModel item);
+  Future<bool> deleteInventoryItem(int id);
+  Future<List<InventoryItemModel>> searchInventoryItems(String query);
+  Future<List<InventoryItemModel>> getInventoryItemsByCategory(int categoryId);
 
-  // Fetch all inventory items
-  Future<List<InventoryItem>> getAllItems() async {
-    final driftItems = await _local.getAllInventoryItems();
-    return driftItems
-        .map((driftItem) => InventoryItem.fromDriftItem(driftItem))
-        .toList();
+  // Categories
+  Future<List<CategoryModel>> getAllCategories();
+  Stream<List<CategoryModel>> watchAllCategories();
+  Future<CategoryModel?> getCategoryById(int id);
+  Future<int> addCategory(CategoryModel category);
+  Future<bool> updateCategory(CategoryModel category);
+  Future<bool> deleteCategory(int id);
+
+  // Suppliers
+  Future<List<SupplierModel>> getAllSuppliers();
+  Stream<List<SupplierModel>> watchAllSuppliers();
+  Future<SupplierModel?> getSupplierById(int id);
+  Future<int> addSupplier(SupplierModel supplier);
+  Future<bool> updateSupplier(SupplierModel supplier);
+  Future<bool> deleteSupplier(int id);
+
+  // Supply History
+  Future<List<SupplyHistoryModel>> getSupplyHistoryBySupplier(int supplierId);
+  Future<List<SupplyHistoryModel>> getSupplyHistoryByItem(int itemId);
+  Future<int> addSupplyHistory(SupplyHistoryModel supplyHistory);
+
+  // Stock Management
+  Future<bool> updateInventoryQuantity(int itemId, double newQuantity);
+  Future<bool> restockInventoryItem(
+    int itemId,
+    double quantity,
+    double boughtPrice,
+    int supplierId,
+  );
+}
+
+class InventoryRepositoryImpl implements InventoryRepository {
+  final AppDatabase _db;
+
+  InventoryRepositoryImpl(this._db);
+
+  // Convert database entities to model objects
+  InventoryItemModel _inventoryItemToModel(
+    InventoryItem item,
+    Category? category,
+    Supplier? supplier,
+  ) {
+    return InventoryItemModel(
+      id: item.id,
+      name: item.name,
+      categoryId: item.categoryId,
+      quantity: item.quantity,
+      boughtPrice: item.boughtPrice,
+      sellPrice: item.sellPrice,
+      supplierId: item.supplierId,
+      lastRestocked: item.lastRestocked,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      categoryName: category?.name,
+      supplierName: supplier?.name,
+    );
   }
 
-  // Add a new inventory item
-  Future<int> addItem(InventoryItem item) async {
-    try {
-      // Add to local database first
-      final id = await _local.insertInventoryItem(item.toCompanion());
-      Logger.i('InventoryRepository', 'Added item locally with ID: $id');
-
-      // Get the inserted item with the new ID
-      final insertedItem = await _local.getInventoryItemById(id);
-
-      // Try to sync with Supabase if online
-      if (insertedItem != null && _connectivityService.isOnline.value) {
-        try {
-          await _remote.uploadInventoryItem(insertedItem);
-          Logger.i('InventoryRepository', 'Item synced with Supabase');
-        } catch (e) {
-          // Just log the error but don't fail the operation
-          // The sync service will handle this later
-          Logger.e(
-            'InventoryRepository',
-            'Failed to sync with Supabase, will try later',
-            error: e,
-          );
-          // Mark item for later sync
-          await _markItemForSync(id);
-        }
-      } else {
-        // Mark for future syncing
-        await _markItemForSync(id);
-        Logger.i(
-          'InventoryRepository',
-          'Device offline, item marked for future sync',
-        );
-      }
-
-      return id;
-    } catch (e) {
-      Logger.e('InventoryRepository', 'Failed to add inventory item', error: e);
-      throw Exception('Failed to add inventory item: $e');
-    }
+  CategoryModel _categoryToModel(Category category) {
+    return CategoryModel(
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+    );
   }
 
-  // Update an existing inventory item
-  Future<bool> updateItem(InventoryItem item) async {
-    try {
-      // Convert to Drift model
-      final driftItem = item.toDriftItem();
-
-      // Update local database
-      final success = await _local.updateInventoryItem(driftItem);
-      Logger.i(
-        'InventoryRepository',
-        'Updated item locally: ${success ? "success" : "failed"}',
-      );
-
-      // Try to sync with Supabase if online
-      if (success && _connectivityService.isOnline.value) {
-        try {
-          await _remote.uploadInventoryItem(driftItem);
-          Logger.i('InventoryRepository', 'Item update synced with Supabase');
-        } catch (e) {
-          // Log the error but don't fail the operation
-          Logger.e(
-            'InventoryRepository',
-            'Failed to sync update with Supabase, will try later',
-            error: e,
-          );
-          // Mark for later sync
-          await _markItemForSync(item.id);
-        }
-      } else if (success) {
-        // Mark for future syncing
-        await _markItemForSync(item.id);
-        Logger.i(
-          'InventoryRepository',
-          'Device offline, update marked for future sync',
-        );
-      }
-
-      return success;
-    } catch (e) {
-      Logger.e(
-        'InventoryRepository',
-        'Failed to update inventory item',
-        error: e,
-      );
-      throw Exception('Failed to update inventory item: $e');
-    }
+  SupplierModel _supplierToModel(Supplier supplier) {
+    return SupplierModel(
+      id: supplier.id,
+      name: supplier.name,
+      contact: supplier.contact,
+      address: supplier.address,
+      createdAt: supplier.createdAt,
+      updatedAt: supplier.updatedAt,
+    );
   }
 
-  // Mark item for sync
-  Future<void> _markItemForSync(int itemId) async {
-    // Implementation depends on how you track pending sync items
-    // This could be a simple flag in the database
-    try {
-      await _local.markItemForSync(itemId);
-    } catch (e) {
-      Logger.e('InventoryRepository', 'Failed to mark item for sync', error: e);
-    }
+  SupplyHistoryModel _supplyHistoryToModel(
+    SupplyHistoryData
+    history, { // Note the type change: SupplyHistoryData instead of SupplyHistory
+    String? itemName,
+    String? supplierName,
+  }) {
+    return SupplyHistoryModel(
+      id: history.id,
+      supplierId: history.supplierId,
+      inventoryItemId: history.inventoryItemId,
+      quantity: history.quantity,
+      boughtPrice: history.boughtPrice,
+      supplyDate: history.supplyDate,
+      createdAt: history.createdAt,
+      itemName: itemName,
+      supplierName: supplierName,
+    );
   }
 
-  // Delete an inventory item
-  Future<bool> deleteItem(int id) async {
-    try {
-      final rowsAffected = await _local.deleteInventoryItem(id);
-
-      // Try to delete from Supabase if online
-      if (rowsAffected > 0 && _connectivityService.isOnline.value) {
-        try {
-          await _remote.deleteInventoryItem(id);
-          Logger.i('InventoryRepository', 'Item deletion synced with Supabase');
-        } catch (e) {
-          // Just log the error but don't fail the operation
-          Logger.e(
-            'InventoryRepository',
-            'Failed to sync deletion with Supabase',
-            error: e,
-          );
-          // Could track deletions for later sync
-        }
-      }
-
-      return rowsAffected > 0;
-    } catch (e) {
-      Logger.e(
-        'InventoryRepository',
-        'Failed to delete inventory item',
-        error: e,
-      );
-      throw Exception('Failed to delete inventory item: $e');
-    }
-  }
-
-  // Get inventory item by ID
-  Future<InventoryItem?> getItemById(int id) async {
-    final driftItem = await _local.getInventoryItemById(id);
-    if (driftItem == null) return null;
-    return InventoryItem.fromDriftItem(driftItem);
-  }
-
-  // Get items by category
-  Future<List<InventoryItem>> getItemsByCategory(String category) async {
-    final query = _local.select(_local.inventoryItems)
-      ..where((tbl) => tbl.category.equals(category));
-
-    final driftItems = await query.get();
-    return driftItems.map((item) => InventoryItem.fromDriftItem(item)).toList();
-  }
-
-  // Get items by supplier
-  Future<List<InventoryItem>> getItemsBySupplier(String supplier) async {
-    final query = _local.select(_local.inventoryItems)
-      ..where((tbl) => tbl.supplier.equals(supplier));
-
-    final driftItems = await query.get();
-    return driftItems.map((item) => InventoryItem.fromDriftItem(item)).toList();
-  }
-
-  // Get all unique categories
-  Future<List<String>> getAllCategories() async {
-    final items = await getAllItems();
-    return items.map((item) => item.category).toSet().toList();
-  }
-
-  // Get all unique suppliers
-  Future<List<String>> getAllSuppliers() async {
-    final items = await getAllItems();
+  // Inventory Items Implementation
+  @override
+  Future<List<InventoryItemModel>> getAllInventoryItems() async {
+    final items = await _db.watchInventoryWithRelations().first;
     return items
-        .where((item) => item.supplier != null && item.supplier!.isNotEmpty)
-        .map((item) => item.supplier!)
-        .toSet()
+        .map(
+          (relation) => _inventoryItemToModel(
+            relation.item,
+            relation.category,
+            relation.supplier,
+          ),
+        )
         .toList();
   }
 
-  // Get items that need syncing
-  Future<List<drift.InventoryItem>> getPendingSyncItems() async {
-    return await _local.getPendingSyncItems();
+  @override
+  Stream<List<InventoryItemModel>> watchAllInventoryItems() {
+    return _db.watchInventoryWithRelations().map(
+      (items) =>
+          items
+              .map(
+                (relation) => _inventoryItemToModel(
+                  relation.item,
+                  relation.category,
+                  relation.supplier,
+                ),
+              )
+              .toList(),
+    );
+  }
+
+  @override
+  Future<InventoryItemModel?> getInventoryItemById(int id) async {
+    try {
+      final relation = await _db.getInventoryItemWithRelations(id);
+      return _inventoryItemToModel(
+        relation.item,
+        relation.category,
+        relation.supplier,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<int> addInventoryItem(InventoryItemModel item) async {
+    return await _db
+        .into(_db.inventoryItems)
+        .insert(
+          InventoryItemsCompanion.insert(
+            name: item.name,
+            categoryId: item.categoryId,
+            quantity: Value(item.quantity),
+            boughtPrice: item.boughtPrice,
+            sellPrice: item.sellPrice,
+            supplierId:
+                item.supplierId != null
+                    ? Value(item.supplierId!)
+                    : const Value.absent(),
+            lastRestocked:
+                item.lastRestocked != null
+                    ? Value(item.lastRestocked!)
+                    : const Value.absent(),
+          ),
+        );
+  }
+
+  @override
+  Future<bool> updateInventoryItem(InventoryItemModel item) async {
+    if (item.id == null) return false;
+
+    final rowsAffected = await (_db.update(_db.inventoryItems)
+      ..where((tbl) => tbl.id.equals(item.id!))).write(
+      InventoryItemsCompanion(
+        name: Value(item.name),
+        categoryId: Value(item.categoryId),
+        quantity: Value(item.quantity),
+        boughtPrice: Value(item.boughtPrice),
+        sellPrice: Value(item.sellPrice),
+        supplierId:
+            item.supplierId != null
+                ? Value(item.supplierId!)
+                : const Value.absent(),
+        lastRestocked:
+            item.lastRestocked != null
+                ? Value(item.lastRestocked!)
+                : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    return rowsAffected > 0;
+  }
+
+  @override
+  Future<bool> deleteInventoryItem(int id) async {
+    final rowsAffected =
+        await (_db.delete(_db.inventoryItems)
+          ..where((tbl) => tbl.id.equals(id))).go();
+
+    return rowsAffected > 0;
+  }
+
+  @override
+  Future<List<InventoryItemModel>> searchInventoryItems(String query) async {
+    final searchTerm = '%$query%';
+
+    final results =
+        await (_db.select(_db.inventoryItems).join([
+          leftOuterJoin(
+            _db.categories,
+            _db.categories.id.equalsExp(_db.inventoryItems.categoryId),
+          ),
+          leftOuterJoin(
+            _db.suppliers,
+            _db.suppliers.id.equalsExp(_db.inventoryItems.supplierId),
+          ),
+        ])..where(_db.inventoryItems.name.like(searchTerm))).get();
+
+    return results.map((row) {
+      final item = row.readTable(_db.inventoryItems);
+      final category = row.readTable(_db.categories);
+      final supplier = row.readTableOrNull(_db.suppliers);
+
+      return _inventoryItemToModel(item, category, supplier);
+    }).toList();
+  }
+
+  @override
+  Future<List<InventoryItemModel>> getInventoryItemsByCategory(
+    int categoryId,
+  ) async {
+    final results =
+        await (_db.select(_db.inventoryItems).join([
+          leftOuterJoin(
+            _db.categories,
+            _db.categories.id.equalsExp(_db.inventoryItems.categoryId),
+          ),
+          leftOuterJoin(
+            _db.suppliers,
+            _db.suppliers.id.equalsExp(_db.inventoryItems.supplierId),
+          ),
+        ])..where(_db.inventoryItems.categoryId.equals(categoryId))).get();
+
+    return results.map((row) {
+      final item = row.readTable(_db.inventoryItems);
+      final category = row.readTable(_db.categories);
+      final supplier = row.readTableOrNull(_db.suppliers);
+
+      return _inventoryItemToModel(item, category, supplier);
+    }).toList();
+  }
+
+  // Categories Implementation
+  @override
+  Future<List<CategoryModel>> getAllCategories() async {
+    final categories = await _db.select(_db.categories).get();
+    return categories.map(_categoryToModel).toList();
+  }
+
+  @override
+  Stream<List<CategoryModel>> watchAllCategories() {
+    return _db
+        .select(_db.categories)
+        .watch()
+        .map((categories) => categories.map(_categoryToModel).toList());
+  }
+
+  @override
+  Future<CategoryModel?> getCategoryById(int id) async {
+    try {
+      final category =
+          await (_db.select(_db.categories)
+            ..where((tbl) => tbl.id.equals(id))).getSingle();
+      return _categoryToModel(category);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<int> addCategory(CategoryModel category) async {
+    return await _db
+        .into(_db.categories)
+        .insert(
+          CategoriesCompanion.insert(
+            name: category.name,
+            description:
+                category.description != null
+                    ? Value(category.description!)
+                    : const Value.absent(),
+          ),
+        );
+  }
+
+  @override
+  Future<bool> updateCategory(CategoryModel category) async {
+    if (category.id == null) return false;
+
+    final rowsAffected = await (_db.update(_db.categories)
+      ..where((tbl) => tbl.id.equals(category.id!))).write(
+      CategoriesCompanion(
+        name: Value(category.name),
+        description:
+            category.description != null
+                ? Value(category.description!)
+                : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    return rowsAffected > 0;
+  }
+
+  @override
+  Future<bool> deleteCategory(int id) async {
+    // Check if category is in use
+    final itemsUsingCategory =
+        await (_db.select(_db.inventoryItems)
+          ..where((tbl) => tbl.categoryId.equals(id))).get();
+
+    if (itemsUsingCategory.isNotEmpty) {
+      return false; // Cannot delete category in use
+    }
+
+    final rowsAffected =
+        await (_db.delete(_db.categories)
+          ..where((tbl) => tbl.id.equals(id))).go();
+
+    return rowsAffected > 0;
+  }
+
+  // Suppliers Implementation
+  @override
+  Future<List<SupplierModel>> getAllSuppliers() async {
+    final suppliers = await _db.select(_db.suppliers).get();
+    return suppliers.map(_supplierToModel).toList();
+  }
+
+  @override
+  Stream<List<SupplierModel>> watchAllSuppliers() {
+    return _db
+        .select(_db.suppliers)
+        .watch()
+        .map((suppliers) => suppliers.map(_supplierToModel).toList());
+  }
+
+  @override
+  Future<SupplierModel?> getSupplierById(int id) async {
+    try {
+      final supplier =
+          await (_db.select(_db.suppliers)
+            ..where((tbl) => tbl.id.equals(id))).getSingle();
+      return _supplierToModel(supplier);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<int> addSupplier(SupplierModel supplier) async {
+    return await _db
+        .into(_db.suppliers)
+        .insert(
+          SuppliersCompanion.insert(
+            name: supplier.name,
+            contact: supplier.contact,
+            address:
+                supplier.address != null
+                    ? Value(supplier.address!)
+                    : const Value.absent(),
+          ),
+        );
+  }
+
+  @override
+  Future<bool> updateSupplier(SupplierModel supplier) async {
+    if (supplier.id == null) return false;
+
+    final rowsAffected = await (_db.update(_db.suppliers)
+      ..where((tbl) => tbl.id.equals(supplier.id!))).write(
+      SuppliersCompanion(
+        name: Value(supplier.name),
+        contact: Value(supplier.contact),
+        address:
+            supplier.address != null
+                ? Value(supplier.address!)
+                : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    return rowsAffected > 0;
+  }
+
+  @override
+  Future<bool> deleteSupplier(int id) async {
+    // Check if supplier is in use
+    final itemsUsingSupplier =
+        await (_db.select(_db.inventoryItems)
+          ..where((tbl) => tbl.supplierId.equals(id))).get();
+
+    if (itemsUsingSupplier.isNotEmpty) {
+      return false; // Cannot delete supplier in use
+    }
+
+    final rowsAffected =
+        await (_db.delete(_db.suppliers)
+          ..where((tbl) => tbl.id.equals(id))).go();
+
+    return rowsAffected > 0;
+  }
+
+  // Supply History Implementation
+  @override
+  Future<List<SupplyHistoryModel>> getSupplyHistoryBySupplier(
+    int supplierId,
+  ) async {
+    final results =
+        await (_db.select(_db.supplyHistory).join([
+          innerJoin(
+            _db.suppliers,
+            _db.suppliers.id.equalsExp(_db.supplyHistory.supplierId),
+          ),
+          innerJoin(
+            _db.inventoryItems,
+            _db.inventoryItems.id.equalsExp(_db.supplyHistory.inventoryItemId),
+          ),
+        ])..where(_db.supplyHistory.supplierId.equals(supplierId))).get();
+
+    return results.map((row) {
+      final history = row.readTable(_db.supplyHistory);
+      final supplier = row.readTable(_db.suppliers);
+      final item = row.readTable(_db.inventoryItems);
+
+      return _supplyHistoryToModel(
+        history,
+        itemName: item.name,
+        supplierName: supplier.name,
+      );
+    }).toList();
+  }
+
+  @override
+  Future<List<SupplyHistoryModel>> getSupplyHistoryByItem(int itemId) async {
+    final results =
+        await (_db.select(_db.supplyHistory).join([
+          innerJoin(
+            _db.suppliers,
+            _db.suppliers.id.equalsExp(_db.supplyHistory.supplierId),
+          ),
+          innerJoin(
+            _db.inventoryItems,
+            _db.inventoryItems.id.equalsExp(_db.supplyHistory.inventoryItemId),
+          ),
+        ])..where(_db.supplyHistory.inventoryItemId.equals(itemId))).get();
+
+    return results.map((row) {
+      final history = row.readTable(_db.supplyHistory);
+      final supplier = row.readTable(_db.suppliers);
+      final item = row.readTable(_db.inventoryItems);
+
+      return _supplyHistoryToModel(
+        history,
+        itemName: item.name,
+        supplierName: supplier.name,
+      );
+    }).toList();
+  }
+
+  @override
+  Future<int> addSupplyHistory(SupplyHistoryModel supplyHistory) async {
+    return await _db
+        .into(_db.supplyHistory)
+        .insert(
+          SupplyHistoryCompanion.insert(
+            supplierId: supplyHistory.supplierId,
+            inventoryItemId: supplyHistory.inventoryItemId,
+            quantity: supplyHistory.quantity,
+            boughtPrice: supplyHistory.boughtPrice,
+            supplyDate: Value(supplyHistory.supplyDate),
+          ),
+        );
+  }
+
+  // Stock Management Implementation
+  @override
+  Future<bool> updateInventoryQuantity(int itemId, double newQuantity) async {
+    final rowsAffected = await (_db.update(_db.inventoryItems)
+      ..where((tbl) => tbl.id.equals(itemId))).write(
+      InventoryItemsCompanion(
+        quantity: Value(newQuantity),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    return rowsAffected > 0;
+  }
+
+  @override
+  Future<bool> restockInventoryItem(
+    int itemId,
+    double quantity,
+    double boughtPrice,
+    int supplierId,
+  ) async {
+    return await _db.transaction(() async {
+      try {
+        // Get current item
+        final item =
+            await (_db.select(_db.inventoryItems)
+              ..where((tbl) => tbl.id.equals(itemId))).getSingle();
+
+        // Update inventory quantity
+        final newQuantity = item.quantity + quantity;
+        await (_db.update(_db.inventoryItems)
+          ..where((tbl) => tbl.id.equals(itemId))).write(
+          InventoryItemsCompanion(
+            quantity: Value(newQuantity),
+            boughtPrice: Value(boughtPrice),
+            supplierId: Value(supplierId),
+            lastRestocked: Value(DateTime.now()),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+
+        // Record in supply history
+        await _db
+            .into(_db.supplyHistory)
+            .insert(
+              SupplyHistoryCompanion.insert(
+                supplierId: supplierId,
+                inventoryItemId: itemId,
+                quantity: quantity,
+                boughtPrice: boughtPrice,
+                supplyDate: Value(DateTime.now()),
+              ),
+            );
+
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
   }
 }

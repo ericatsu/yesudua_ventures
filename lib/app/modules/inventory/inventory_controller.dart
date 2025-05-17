@@ -1,393 +1,345 @@
 import 'package:get/get.dart';
-import '../../data/models/inventory_item.dart';
-import '../../data/repositories/inventory_repository.dart';
-import '../../core/utils/snackbar_utils.dart';
+import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
+import 'package:yesudua_ventures/app/data/repositories/inventory_repository.dart';
+import 'package:yesudua_ventures/app/core/utils/constants.dart';
 
 class InventoryController extends GetxController {
-  final InventoryRepository _repository = Get.find<InventoryRepository>();
+  final InventoryRepository _repository;
 
-  // Observable variables
-  final items = <InventoryItem>[].obs;
-  final filteredItems = <InventoryItem>[].obs;
-  final categories = <String>[].obs;
-  final suppliers = <String>[].obs;
-  final isLoading = false.obs;
-  final hasError = false.obs;
-  final errorMessage = ''.obs;
+  // Observable lists for inventory items, categories, and suppliers
+  final RxList<InventoryItemModel> inventoryItems = <InventoryItemModel>[].obs;
+  final RxList<CategoryModel> categories = <CategoryModel>[].obs;
+  final RxList<SupplierModel> suppliers = <SupplierModel>[].obs;
 
-  // Form variables for add/edit
-  final name = ''.obs;
-  final category = ''.obs;
-  final quantity = 0.obs;
-  final boughtPrice = 0.0.obs;
-  final sellPrice = 0.0.obs;
-  final supplier = ''.obs;
-  final selectedImage = ''.obs;
+  // Loading states
+  final RxBool isLoadingItems = false.obs;
+  final RxBool isLoadingCategories = false.obs;
+  final RxBool isLoadingSuppliers = false.obs;
 
-  // Current selected filters
-  final selectedCategory = RxString('');
-  final selectedSupplier = RxString('');
-  final searchQuery = RxString('');
+  // Search query
+  final RxString searchQuery = ''.obs;
+
+  // Filter by category
+  final Rx<CategoryModel?> selectedCategory = Rx<CategoryModel?>(null);
+
+  // Sort options
+  final RxString sortBy =
+      'name'.obs; // Options: 'name', 'quantity', 'sellPrice'
+  final RxBool sortAscending = true.obs;
+
+  // Constructor
+  InventoryController(this._repository);
 
   @override
   void onInit() {
     super.onInit();
-    loadInventory();
-    loadCategories();
-    loadSuppliers();
+    fetchAllInventory();
+    fetchAllCategories();
+    fetchAllSuppliers();
+    ensurePredefinedCategories();
+
+    // Listen to changes in search query
+    debounce(
+      searchQuery,
+      (_) => searchInventory(),
+      time: const Duration(milliseconds: 500),
+    );
   }
 
-  // Load all inventory items
-  Future<void> loadInventory() async {
-    isLoading.value = true;
-    hasError.value = false;
-
+  // Fetch all inventory items
+  Future<void> fetchAllInventory() async {
+    isLoadingItems.value = true;
     try {
-      items.value = await _repository.getAllItems();
-      applyFilters(); // Apply any existing filters to the loaded items
+      if (searchQuery.isEmpty && selectedCategory.value == null) {
+        inventoryItems.value = await _repository.getAllInventoryItems();
+      } else if (searchQuery.isNotEmpty) {
+        searchInventory();
+        return;
+      } else if (selectedCategory.value != null) {
+        filterByCategory();
+        return;
+      }
+      sortInventory();
     } catch (e) {
-      hasError.value = true;
-      errorMessage.value = e.toString();
-      SnackbarUtils.showError('Failed to load inventory', e.toString());
+      Get.snackbar('Error', 'Failed to load inventory items: $e');
     } finally {
-      isLoading.value = false;
+      isLoadingItems.value = false;
     }
   }
 
-  // Load all categories
-  Future<void> loadCategories() async {
+  // Search inventory items
+  Future<void> searchInventory() async {
+    if (searchQuery.isEmpty) {
+      fetchAllInventory();
+      return;
+    }
+
+    isLoadingItems.value = true;
+    try {
+      inventoryItems.value = await _repository.searchInventoryItems(
+        searchQuery.value,
+      );
+      sortInventory();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to search inventory items: $e');
+    } finally {
+      isLoadingItems.value = false;
+    }
+  }
+
+  Future<void> ensurePredefinedCategories() async {
+    try {
+      final existingCategories = await _repository.getAllCategories();
+
+      // Create a set of existing category names (case-insensitive)
+      final existingCategoryNames =
+          existingCategories.map((c) => c.name.toLowerCase()).toSet();
+
+      // Add any predefined categories that don't exist yet
+      for (final categoryName in AppConstants.predefinedCategories) {
+        if (!existingCategoryNames.contains(categoryName.toLowerCase())) {
+          await _repository.addCategory(CategoryModel(name: categoryName));
+        }
+      }
+
+      // Refresh categories list
+      await fetchAllCategories();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to initialize predefined categories: $e');
+    }
+  }
+  
+  // Filter by category
+  Future<void> filterByCategory() async {
+    if (selectedCategory.value == null) {
+      fetchAllInventory();
+      return;
+    }
+
+    isLoadingItems.value = true;
+    try {
+      inventoryItems.value = await _repository.getInventoryItemsByCategory(
+        selectedCategory.value!.id!,
+      );
+      sortInventory();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to filter inventory items: $e');
+    } finally {
+      isLoadingItems.value = false;
+    }
+  }
+
+  // Sort inventory items
+  void sortInventory() {
+    switch (sortBy.value) {
+      case 'name':
+        sortAscending.value
+            ? inventoryItems.sort((a, b) => a.name.compareTo(b.name))
+            : inventoryItems.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case 'quantity':
+        sortAscending.value
+            ? inventoryItems.sort((a, b) => a.quantity.compareTo(b.quantity))
+            : inventoryItems.sort((a, b) => b.quantity.compareTo(a.quantity));
+        break;
+      case 'sellPrice':
+        sortAscending.value
+            ? inventoryItems.sort((a, b) => a.sellPrice.compareTo(b.sellPrice))
+            : inventoryItems.sort((a, b) => b.sellPrice.compareTo(a.sellPrice));
+        break;
+    }
+  }
+
+  // Change sort option
+  void changeSortOption(String option) {
+    if (sortBy.value == option) {
+      sortAscending.toggle();
+    } else {
+      sortBy.value = option;
+      sortAscending.value = true;
+    }
+    sortInventory();
+  }
+
+  // Fetch all categories
+  Future<void> fetchAllCategories() async {
+    isLoadingCategories.value = true;
     try {
       categories.value = await _repository.getAllCategories();
     } catch (e) {
-      SnackbarUtils.showError('Failed to load categories', e.toString());
+      Get.snackbar('Error', 'Failed to load categories: $e');
+    } finally {
+      isLoadingCategories.value = false;
     }
   }
 
-  // Load all suppliers
-  Future<void> loadSuppliers() async {
+  // Fetch all suppliers
+  Future<void> fetchAllSuppliers() async {
+    isLoadingSuppliers.value = true;
     try {
       suppliers.value = await _repository.getAllSuppliers();
     } catch (e) {
-      SnackbarUtils.showError('Failed to load suppliers', e.toString());
+      Get.snackbar('Error', 'Failed to load suppliers: $e');
+    } finally {
+      isLoadingSuppliers.value = false;
     }
   }
 
-  // Add a new inventory item
-  Future<bool> addItem() async {
-    if (!validateItemForm()) return false;
-
-    isLoading.value = true;
+  // Add inventory item
+  Future<bool> addInventoryItem(InventoryItemModel item) async {
     try {
-      final newItem = InventoryItem(
-        id: 0, // ID will be assigned by the database
-        name: name.value,
-        category: category.value,
-        quantity: quantity.value,
-        boughtPrice: boughtPrice.value,
-        sellPrice: sellPrice.value,
-        supplier: supplier.value.isEmpty ? null : supplier.value,
-        imageKey: selectedImage.value.isEmpty ? null : selectedImage.value,
-        lastUpdated: DateTime.now(),
-      );
-
-      final id = await _repository.addItem(newItem);
-
+      final id = await _repository.addInventoryItem(item);
       if (id > 0) {
-        // Refresh the inventory list
-        await loadInventory();
-
-        // Update categories and suppliers if new ones were added
-        if (!categories.contains(category.value)) {
-          categories.add(category.value);
-        }
-
-        if (supplier.value.isNotEmpty && !suppliers.contains(supplier.value)) {
-          suppliers.add(supplier.value);
-        }
-
-        resetForm();
-        SnackbarUtils.showSuccess('Success', 'Item added successfully');
+        // Add ID to the item
+        final newItem = item.copyWith(id: id);
+        inventoryItems.add(newItem);
+        sortInventory();
+        Get.snackbar('Success', '${item.name} added to inventory');
         return true;
-      } else {
-        SnackbarUtils.showError('Error', 'Failed to add item');
-        return false;
       }
-    } catch (e) {
-      SnackbarUtils.showError('Error', 'Failed to add item: ${e.toString()}');
       return false;
-    } finally {
-      isLoading.value = false;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add inventory item: $e');
+      return false;
     }
   }
 
-  // Update an existing inventory item
-  Future<bool> updateItem(InventoryItem item) async {
-    if (!validateItemForm()) return false;
-
-    isLoading.value = true;
+  // Update inventory item
+  Future<bool> updateInventoryItem(InventoryItemModel item) async {
     try {
-      final updatedItem = item.copyWith(
-        name: name.value,
-        category: category.value,
-        quantity: quantity.value,
-        boughtPrice: boughtPrice.value,
-        sellPrice: sellPrice.value,
-        supplier: supplier.value.isEmpty ? null : supplier.value,
-        imageKey: selectedImage.value.isEmpty ? null : selectedImage.value,
-        lastUpdated: DateTime.now(),
-      );
-
-      final success = await _repository.updateItem(updatedItem);
-
+      final success = await _repository.updateInventoryItem(item);
       if (success) {
-        // Refresh the inventory list
-        await loadInventory();
-
-        // Update categories and suppliers if new ones were added
-        if (!categories.contains(category.value)) {
-          categories.add(category.value);
-        }
-
-        if (supplier.value.isNotEmpty && !suppliers.contains(supplier.value)) {
-          suppliers.add(supplier.value);
-        }
-
-        resetForm();
-        SnackbarUtils.showSuccess('Success', 'Item updated successfully');
-        return true;
-      } else {
-        SnackbarUtils.showError('Error', 'Failed to update item');
-        return false;
-      }
-    } catch (e) {
-      SnackbarUtils.showError(
-        'Error',
-        'Failed to update item: ${e.toString()}',
-      );
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // Delete an inventory item
-  Future<bool> deleteItem(int id) async {
-    isLoading.value = true;
-    try {
-      final success = await _repository.deleteItem(id);
-
-      if (success) {
-        // Remove the item from the list
-        items.removeWhere((item) => item.id == id);
-
-        // Also remove from filtered items if present
-        filteredItems.removeWhere((item) => item.id == id);
-
-        SnackbarUtils.showSuccess('Success', 'Item deleted successfully');
-        return true;
-      } else {
-        SnackbarUtils.showError('Error', 'Failed to delete item');
-        return false;
-      }
-    } catch (e) {
-      SnackbarUtils.showError(
-        'Error',
-        'Failed to delete item: ${e.toString()}',
-      );
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // Restock an inventory item
-  Future<bool> restockItem(
-    InventoryItem item,
-    int addedQty,
-    double? newBoughtPrice,
-  ) async {
-    if (addedQty <= 0) {
-      SnackbarUtils.showError(
-        'Invalid Quantity',
-        'Quantity must be greater than 0',
-      );
-      return false;
-    }
-
-    isLoading.value = true;
-    try {
-      final updatedItem = item.copyWith(
-        quantity: item.quantity + addedQty,
-        boughtPrice: newBoughtPrice ?? item.boughtPrice,
-        lastUpdated: DateTime.now(),
-      );
-
-      final success = await _repository.updateItem(updatedItem);
-
-      if (success) {
-        // Update the item in the lists
-        final index = items.indexWhere((e) => e.id == item.id);
+        final index = inventoryItems.indexWhere((i) => i.id == item.id);
         if (index != -1) {
-          items[index] = updatedItem;
+          inventoryItems[index] = item;
+          inventoryItems.refresh();
+          sortInventory();
         }
-
-        final filteredIndex = filteredItems.indexWhere((e) => e.id == item.id);
-        if (filteredIndex != -1) {
-          filteredItems[filteredIndex] = updatedItem;
-        }
-
-        SnackbarUtils.showSuccess('Success', 'Item restocked successfully');
+        Get.snackbar('Success', '${item.name} updated');
         return true;
-      } else {
-        SnackbarUtils.showError('Error', 'Failed to restock item');
-        return false;
       }
+      return false;
     } catch (e) {
-      SnackbarUtils.showError(
-        'Error',
-        'Failed to restock item: ${e.toString()}',
-      );
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // Load form with item data for editing
-  void loadItemToForm(InventoryItem item) {
-    name.value = item.name;
-    category.value = item.category;
-    quantity.value = item.quantity;
-    boughtPrice.value = item.boughtPrice;
-    sellPrice.value = item.sellPrice;
-    supplier.value = item.supplier ?? '';
-    selectedImage.value = item.imageKey ?? '';
-  }
-
-  // Reset form values
-  void resetForm() {
-    name.value = '';
-    category.value = '';
-    quantity.value = 0;
-    boughtPrice.value = 0.0;
-    sellPrice.value = 0.0;
-    supplier.value = '';
-    selectedImage.value = '';
-  }
-
-  // Validate form values
-  bool validateItemForm() {
-    if (name.value.isEmpty) {
-      SnackbarUtils.showError('Validation Error', 'Name is required');
+      Get.snackbar('Error', 'Failed to update inventory item: $e');
       return false;
     }
-
-    if (category.value.isEmpty) {
-      SnackbarUtils.showError('Validation Error', 'Category is required');
-      return false;
-    }
-
-    if (quantity.value < 0) {
-      SnackbarUtils.showError(
-        'Validation Error',
-        'Quantity cannot be negative',
-      );
-      return false;
-    }
-
-    if (boughtPrice.value < 0) {
-      SnackbarUtils.showError(
-        'Validation Error',
-        'Bought price cannot be negative',
-      );
-      return false;
-    }
-
-    if (sellPrice.value < 0) {
-      SnackbarUtils.showError(
-        'Validation Error',
-        'Sell price cannot be negative',
-      );
-      return false;
-    }
-
-    return true;
   }
 
-  // Filter items by category and search query
-  void applyFilters() {
-    var result = List<InventoryItem>.from(items);
-
-    // Filter by category if selected
-    if (selectedCategory.value.isNotEmpty) {
-      result =
-          result
-              .where((item) => item.category == selectedCategory.value)
-              .toList();
-    }
-
-    // Filter by supplier if selected
-    if (selectedSupplier.value.isNotEmpty) {
-      result =
-          result
-              .where(
-                (item) =>
-                    item.supplier != null &&
-                    item.supplier == selectedSupplier.value,
-              )
-              .toList();
-    }
-
-    // Filter by search query if provided
-    if (searchQuery.value.isNotEmpty) {
-      final query = searchQuery.value.toLowerCase();
-      result =
-          result
-              .where(
-                (item) =>
-                    item.name.toLowerCase().contains(query) ||
-                    item.category.toLowerCase().contains(query) ||
-                    (item.supplier != null &&
-                        item.supplier!.toLowerCase().contains(query)),
-              )
-              .toList();
-    }
-
-    filteredItems.value = result;
-  }
-
-  // Set category filter
-  void setSelectedCategory(String categoryValue) {
-    selectedCategory.value = categoryValue;
-    applyFilters();
-  }
-
-  // Set supplier filter
-  void setSelectedSupplier(String supplierValue) {
-    selectedSupplier.value = supplierValue;
-    applyFilters();
-  }
-
-  // Set search query
-  void setSearchQuery(String query) {
-    searchQuery.value = query;
-    applyFilters();
-  }
-
-  // Reset all filters
-  void resetFilters() {
-    selectedCategory.value = '';
-    selectedSupplier.value = '';
-    searchQuery.value = '';
-    filteredItems.value = items;
-  }
-
-  // Get item by ID - needed for edit functionality
-  Future<InventoryItem?> getItemById(int id) async {
+  // Delete inventory item
+  Future<bool> deleteInventoryItem(int id) async {
     try {
-      return await _repository.getItemById(id);
+      final success = await _repository.deleteInventoryItem(id);
+      if (success) {
+        inventoryItems.removeWhere((item) => item.id == id);
+        Get.snackbar('Success', 'Item deleted from inventory');
+        return true;
+      }
+      return false;
     } catch (e) {
-      SnackbarUtils.showError('Error', 'Failed to fetch item: ${e.toString()}');
+      Get.snackbar('Error', 'Failed to delete inventory item: $e');
+      return false;
+    }
+  }
+
+  // Add category
+  Future<bool> addCategory(CategoryModel category) async {
+    try {
+      final id = await _repository.addCategory(category);
+      if (id > 0) {
+        final newCategory = category.copyWith(id: id);
+        categories.add(newCategory);
+        Get.snackbar('Success', '${category.name} category added');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add category: $e');
+      return false;
+    }
+  }
+
+  // Add supplier
+  Future<bool> addSupplier(SupplierModel supplier) async {
+    try {
+      final id = await _repository.addSupplier(supplier);
+      if (id > 0) {
+        final newSupplier = supplier.copyWith(id: id);
+        suppliers.add(newSupplier);
+        Get.snackbar('Success', '${supplier.name} supplier added');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to add supplier: $e');
+      return false;
+    }
+  }
+
+  // Restock inventory item
+  Future<bool> restockInventoryItem(
+    int itemId,
+    double quantity,
+    double boughtPrice,
+    int supplierId,
+  ) async {
+    try {
+      final success = await _repository.restockInventoryItem(
+        itemId,
+        quantity,
+        boughtPrice,
+        supplierId,
+      );
+
+      if (success) {
+        // Refresh the item after restock
+        final item = await _repository.getInventoryItemById(itemId);
+        if (item != null) {
+          final index = inventoryItems.indexWhere((i) => i.id == itemId);
+          if (index != -1) {
+            inventoryItems[index] = item;
+            inventoryItems.refresh();
+          }
+        }
+        Get.snackbar('Success', 'Item restocked successfully');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to restock item: $e');
+      return false;
+    }
+  }
+
+  // Get image path for inventory item based on category
+  String getImagePathForItem(InventoryItemModel item) {
+    if (item.categoryName == null) return AppConstants.itemImages['default']!;
+
+    final categoryNameLower = item.categoryName!.toLowerCase();
+
+    for (final key in AppConstants.itemImages.keys) {
+      if (categoryNameLower.contains(key)) {
+        return AppConstants.itemImages[key]!;
+      }
+    }
+
+    return AppConstants.itemImages['default']!;
+  }
+
+  // Find category by ID
+  CategoryModel? findCategoryById(int id) {
+    try {
+      return categories.firstWhere((category) => category.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Find supplier by ID
+  SupplierModel? findSupplierById(int? id) {
+    if (id == null) return null;
+    try {
+      return suppliers.firstWhere((supplier) => supplier.id == id);
+    } catch (e) {
       return null;
     }
   }
