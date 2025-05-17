@@ -245,12 +245,12 @@ class SupplierListItem extends StatelessWidget {
   final VoidCallback onViewHistory;
 
   const SupplierListItem({
-    Key? key,
+    super.key,
     required this.supplier,
     required this.onEdit,
     required this.onDelete,
     required this.onViewHistory,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -9,8 +9,8 @@ class AuthMiddleware extends GetMiddleware {
     // Check if user is logged in (simplified example)
     final bool isLoggedIn = Get.find<SidebarController>().shouldShowSidebar;
 
-    if (!isLoggedIn && route != AppRoutes.LOGIN) {
-      return const RouteSettings(name: AppRoutes.LOGIN);
+    if (!isLoggedIn && route != AppRoutes.login) {
+      return const RouteSettings(name: AppRoutes.login);
     }
     return null;
   }

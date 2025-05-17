@@ -1,11 +1,11 @@
 abstract class AppRoutes {
-  static const SHOP = '/shop';
-  static const DASHBOARD = '/dashboard';
-  static const INVENTORY = '/inventory';
-  static const SALES = '/sales';
-  static const DEBTORS = '/debtors';
-  static const SUPPLIERS = '/suppliers';
-  static const REPORTS = '/reports';
-  static const SYNC = '/sync';
-  static const LOGIN = '/login';
+  static const shop = '/shop';
+  static const dashboard = '/dashboard';
+  static const inventory = '/inventory';
+  static const sales = '/sales';
+  static const debtors = '/debtors';
+  static const suppliers = '/suppliers';
+  static const reports = '/reports';
+  static const sync = '/sync';
+  static const login = '/login';
 }

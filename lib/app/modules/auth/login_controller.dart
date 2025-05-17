@@ -39,7 +39,7 @@ class LoginController extends GetxController {
         _sidebarController.showSidebar();
 
         // 2. Navigate to dashboard or sales page
-        Get.offAllNamed(AppRoutes.DASHBOARD);
+        Get.offAllNamed(AppRoutes.dashboard);
       } catch (e) {
         Get.snackbar(
           'Error',

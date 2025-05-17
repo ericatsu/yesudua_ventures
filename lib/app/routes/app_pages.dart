@@ -20,42 +20,42 @@ import 'app_routes.dart';
 class AppPages {
   static final pages = [
     GetPage(
-      name: AppRoutes.LOGIN,
+      name: AppRoutes.login,
       page: () => const LoginView(),
       binding: LoginBinding(),
     ),
     GetPage(
-      name: AppRoutes.SALES,
+      name: AppRoutes.sales,
       page: () => SalesView(),
       binding: SalesBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.DASHBOARD,
+      name: AppRoutes.dashboard,
       page: () => DashboardView(),
       binding: DashboardBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.INVENTORY,
+      name: AppRoutes.inventory,
       page: () => InventoryView(),
       binding: InventoryBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.DEBTORS,
+      name: AppRoutes.debtors,
       page: () => DebtorsView(),
       binding: DebtorsBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.SUPPLIERS,
+      name: AppRoutes.suppliers,
       page: () => SuppliersView(),
       binding: SuppliersBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.REPORTS,
+      name: AppRoutes.reports,
       page: () => ReportsView(),
       binding: ReportsBinding(),
       middlewares: [AuthMiddleware()],

@@ -10,16 +10,16 @@ class SidebarController extends GetxController {
 
   // Routes where sidebar should be visible
   final List<String> sidebarRoutes = [
-    AppRoutes.SALES,
-    AppRoutes.DASHBOARD,
-    AppRoutes.INVENTORY,
-    AppRoutes.DEBTORS,
-    AppRoutes.SUPPLIERS,
-    AppRoutes.REPORTS,
+    AppRoutes.sales,
+    AppRoutes.dashboard,
+    AppRoutes.inventory,
+    AppRoutes.debtors,
+    AppRoutes.suppliers,
+    AppRoutes.reports,
   ];
 
   // Routes where sidebar should not be visible
-  final List<String> noSidebarRoutes = [AppRoutes.LOGIN];
+  final List<String> noSidebarRoutes = [AppRoutes.login];
 
   @override
   void onInit() {
@@ -68,7 +68,7 @@ class SidebarController extends GetxController {
 
   // Method to handle logout
   void logout() {
-    Get.offAllNamed(AppRoutes.LOGIN);
+    Get.offAllNamed(AppRoutes.login);
     _showSidebar.value = false;
   }
 
