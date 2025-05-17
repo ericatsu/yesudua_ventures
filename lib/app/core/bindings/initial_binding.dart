@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:yesudua_ventures/app/data/local/app_database.dart';
 import 'package:yesudua_ventures/app/data/repositories/inventory_repository.dart';
+import 'package:yesudua_ventures/app/data/repositories/sales_repository.dart';
 //import 'package:yesudua_ventures/app/data/local/drift_database.dart';
 import 'package:yesudua_ventures/app/modules/sidebar/sidebar_controller.dart';
 // import 'package:yesudua_ventures/app/data/repositories/sales_repository.dart';
@@ -22,7 +23,7 @@ class InitialBinding implements Bindings {
       () => InventoryRepositoryImpl(Get.find<AppDatabase>()),
       fenix: true,
     );
-    // Get.lazyPut(() => SalesRepository(), fenix: true);
+    Get.lazyPut(() => SalesRepository, fenix: true);
     // Get.lazyPut(() => DebtorsRepository(), fenix: true);
     // Get.lazyPut(() => SuppliersRepository(), fenix: true);
   }
