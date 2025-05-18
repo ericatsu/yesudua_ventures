@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-class ReportsView extends StatelessWidget {
-  const ReportsView({super.key});
+class ReceiptsView extends StatelessWidget {
+  const ReceiptsView({super.key});
 
   @override
   Widget build(BuildContext context) {

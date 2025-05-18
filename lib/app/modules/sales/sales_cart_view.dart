@@ -173,6 +173,14 @@ class SalesCartView extends StatelessWidget {
                       onChanged: (value) {
                         controller.customerName.value = value;
                       },
+                      validator: (value) {
+                        // Make customer name required if not paid in full
+                        if (!controller.isPaid.value &&
+                            (value == null || value.isEmpty)) {
+                          return 'Customer name is required for partial payments';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -183,6 +191,14 @@ class SalesCartView extends StatelessWidget {
                       ),
                       onChanged: (value) {
                         controller.customerContact.value = value;
+                      },
+                      validator: (value) {
+                        // Make customer contact required if not paid in full
+                        if (!controller.isPaid.value &&
+                            (value == null || value.isEmpty)) {
+                          return 'Customer contact is required for partial payments';
+                        }
+                        return null;
                       },
                     ),
                     const SizedBox(height: 8),

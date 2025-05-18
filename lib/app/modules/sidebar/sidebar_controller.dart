@@ -15,7 +15,7 @@ class SidebarController extends GetxController {
     AppRoutes.inventory,
     AppRoutes.debtors,
     AppRoutes.suppliers,
-    AppRoutes.reports,
+    AppRoutes.receipts,
   ];
 
   // Routes where sidebar should not be visible

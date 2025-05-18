@@ -305,6 +305,135 @@ class SalesRepository {
     );
   }
 
+  // Get all debtors
+  Future<List<DebtorModel>> getAllDebtors() async {
+    final query =
+        _database.select(_database.debtors)
+          ..where((tbl) => tbl.outstandingBalance.isBiggerThanValue(0))
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]);
+
+    final results = await query.get();
+    final debtors = <DebtorModel>[];
+
+    for (final debtor in results) {
+      // Get payment history
+      final payments = await getDebtorPayments(debtor.id);
+
+      debtors.add(
+        DebtorModel(
+          id: debtor.id,
+          saleId: debtor.saleId,
+          name: debtor.name,
+          contact: debtor.contact,
+          totalDebt: debtor.totalDebt,
+          paidAmount: debtor.paidAmount,
+          outstandingBalance: debtor.outstandingBalance,
+          createdAt: debtor.createdAt,
+          updatedAt: debtor.updatedAt,
+          paymentHistory: payments,
+        ),
+      );
+    }
+
+    return debtors;
+  }
+
+  // Get debtor by ID
+  Future<DebtorModel?> getDebtorById(int debtorId) async {
+    final query = _database.select(_database.debtors)
+      ..where((tbl) => tbl.id.equals(debtorId));
+
+    final result = await query.getSingleOrNull();
+    if (result == null) return null;
+
+    // Get payment history
+    final payments = await getDebtorPayments(result.id);
+
+    return DebtorModel(
+      id: result.id,
+      saleId: result.saleId,
+      name: result.name,
+      contact: result.contact,
+      totalDebt: result.totalDebt,
+      paidAmount: result.paidAmount,
+      outstandingBalance: result.outstandingBalance,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      paymentHistory: payments,
+    );
+  }
+
+  // Get all payments for a debtor
+  Future<List<DebtorPaymentModel>> getDebtorPayments(int debtorId) async {
+    final paymentsQuery =
+        _database.select(_database.debtorPayments)
+          ..where((tbl) => tbl.debtorId.equals(debtorId))
+          ..orderBy([(t) => OrderingTerm.desc(t.paymentDate)]);
+
+    final payments = await paymentsQuery.get();
+
+    return payments
+        .map(
+          (payment) => DebtorPaymentModel(
+            id: payment.id,
+            debtorId: payment.debtorId,
+            amountPaid: payment.amountPaid,
+            paymentDate: payment.paymentDate,
+            createdAt: payment.createdAt,
+          ),
+        )
+        .toList();
+  }
+
+  // Update debtor with new payment
+  Future<bool> updateDebtorPayment(
+    int debtorId,
+    double newPaymentAmount,
+    double totalPaidAmount,
+    bool isPaid,
+  ) async {
+    return _database.transaction(() async {
+      // Get debtor record
+      final debtor =
+          await (_database.select(_database.debtors)
+            ..where((t) => t.id.equals(debtorId))).getSingle();
+
+      final outstandingBalance = debtor.totalDebt - totalPaidAmount;
+
+      // Update debtor record
+      await (_database.update(_database.debtors)
+        ..where((t) => t.id.equals(debtorId))).write(
+        DebtorsCompanion(
+          paidAmount: Value(totalPaidAmount),
+          outstandingBalance: Value(outstandingBalance),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+
+      // Add payment history record
+      await _database
+          .into(_database.debtorPayments)
+          .insert(
+            DebtorPaymentsCompanion.insert(
+              debtorId: debtorId,
+              amountPaid: newPaymentAmount,
+            ),
+          );
+
+      // Update related sale record
+      await (_database.update(_database.sales)
+        ..where((t) => t.id.equals(debtor.saleId))).write(
+        SalesCompanion(
+          paidAmount: Value(totalPaidAmount),
+          isPaid: Value(isPaid),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+
+      return true;
+    });
+  }
+
   // Delete sale (mainly for testing/admin purposes)
   Future<bool> deleteSale(int saleId) async {
     return _database.transaction(() async {

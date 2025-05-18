@@ -4,8 +4,8 @@ abstract class AppRoutes {
   static const inventory = '/inventory';
   static const sales = '/sales';
   static const debtors = '/debtors';
+  static const debtorDetail = '/debtor-detail';
   static const suppliers = '/suppliers';
-  static const reports = '/reports';
-  static const sync = '/sync';
+  static const receipts = '/receipts';
   static const login = '/login';
 }

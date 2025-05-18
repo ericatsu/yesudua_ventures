@@ -89,8 +89,8 @@ class SideBar extends StatelessWidget {
                 ),
                 _buildNavItem(
                   icon: Icons.bar_chart,
-                  title: 'Reports',
-                  route: AppRoutes.reports,
+                  title: 'All Sales',
+                  route: AppRoutes.receipts,
                   isCompact: isCompact,
                 ),
               ],
