@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:yesudua_ventures/app/modules/sidebar/side_bar.dart';
 import 'package:yesudua_ventures/app/modules/sidebar/sidebar_controller.dart';
+import 'package:yesudua_ventures/app/routes/app_routes.dart';
 
 class AppLayout extends StatelessWidget {
   final Widget child;
@@ -11,6 +12,16 @@ class AppLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Force update current route when layout is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Setting the currentRoute when layout is built helps ensure
+      // the sidebar is properly highlighting the active item
+      if (controller.currentRoute.value != Get.currentRoute &&
+          Get.currentRoute != AppRoutes.login) {
+        controller.currentRoute.value = Get.currentRoute;
+      }
+    });
+
     return Scaffold(
       body: Obx(() {
         if (!controller.shouldShowSidebar) {

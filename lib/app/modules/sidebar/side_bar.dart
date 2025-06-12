@@ -171,15 +171,15 @@ class SideBar extends StatelessWidget {
     required bool isCompact,
   }) {
     return GetBuilder<SidebarController>(
-      builder: (_) {
-        final isSelected = Get.currentRoute == route;
+      builder: (controller) {
+        // Use controller's currentRoute value instead of Get.currentRoute
+        final isSelected = controller.currentRoute.value == route;
         final theme = Get.theme;
 
         return InkWell(
           onTap: () {
-            if (Get.currentRoute != route) {
-              Get.toNamed(route);
-            }
+            // Use controller's navigation method
+            controller.navigateTo(route);
           },
           child: Container(
             height: 50,

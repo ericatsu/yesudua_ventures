@@ -23,7 +23,10 @@ class InitialBinding implements Bindings {
       () => InventoryRepositoryImpl(Get.find<AppDatabase>()),
       fenix: true,
     );
-    Get.lazyPut(() => SalesRepository, fenix: true);
+    Get.lazyPut<SalesRepository>(
+      () => SalesRepository(Get.find<AppDatabase>()),
+      fenix: true,
+    );
     // Get.lazyPut(() => DebtorsRepository(), fenix: true);
     // Get.lazyPut(() => SuppliersRepository(), fenix: true);
   }
