@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 import 'package:yesudua_ventures/app/data/models/sales_model.dart';
 import 'package:yesudua_ventures/app/modules/sales/sales_controller.dart';
-import 'package:yesudua_ventures/app/modules/sales/widgets/inventory_item_card.dart';
+import 'package:yesudua_ventures/app/modules/sales/widgets/sales_item_card.dart';
 import 'package:yesudua_ventures/app/modules/sales/sales_cart_view.dart';
 
 class SalesView extends StatelessWidget {
@@ -16,6 +16,7 @@ class SalesView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sales'),
+        automaticallyImplyLeading: false,
         actions: [
           // Search action
           IconButton(
@@ -115,7 +116,7 @@ class SalesView extends StatelessWidget {
                     itemCount: controller.filteredInventoryItems.length,
                     itemBuilder: (context, index) {
                       final item = controller.filteredInventoryItems[index];
-                      return InventoryItemCard(
+                      return SalesItemCard(
                         item: item,
                         onAddToCart:
                             () =>

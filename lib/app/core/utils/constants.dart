@@ -27,7 +27,7 @@ class AppConstants {
 
   // Currency formatter
   static final currencyFormatter = NumberFormat.currency(
-    symbol: '₵', // Ghana Cedi symbol
+    symbol: '₵',
     decimalDigits: 2,
   );
 
@@ -35,30 +35,77 @@ class AppConstants {
   static final dateFormatter = DateFormat('dd/MM/yyyy');
   static final dateTimeFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
-  // Predefined item images (key: assetPath pairs)
-  static final Map<String, String> itemImages = {
-    'cement': AppAssets.cement,
-    'steel': AppAssets.steel,
-    'timber': AppAssets.timber,
-    'paint': AppAssets.paint,
-    'tools': AppAssets.tools,
-    'electrical': AppAssets.electrical,
-    'plumbing': AppAssets.plumbing,
-    'default': AppAssets.defaultItem,
+  // Updated categoryItems structure in constants.dart
+
+  static final Map<String, Map<String, String>> categoryItems = {
+    'cement': {
+      'dangote': AppAssets.dangote,
+      'ghacem': AppAssets.ghacem,
+      'supacem': AppAssets.defaultItem,
+    },
+    'timber': {
+      'hard_4x4': AppAssets.hard_4x4,
+      'soft_4x4': AppAssets.soft_4x4,
+      'hard_2x4': AppAssets.defaultItem,
+      'soft_2x4': AppAssets.defaultItem,
+    },
+    'steel': {
+      'rebar': AppAssets.steel,
+      'angle_iron': AppAssets.defaultItem,
+      'flat_bar': AppAssets.defaultItem,
+    },
+    'paint': {
+      'coral': AppAssets.coral,
+      'deluxy': AppAssets.deluxy,
+      'leyland': AppAssets.leyland,
+      'neuce': AppAssets.neuce,
+    },
+    'tools': {
+      'hammer': AppAssets.tools,
+      'screwdriver': AppAssets.defaultItem,
+      'wrench': AppAssets.defaultItem,
+    },
+    'electrical': {
+      'cable': AppAssets.electrical,
+      'switch': AppAssets.defaultItem,
+      'socket': AppAssets.defaultItem,
+    },
+    'plumbing': {
+      'pipe': AppAssets.plumbing,
+      'elbow': AppAssets.defaultItem,
+      'valve': AppAssets.defaultItem,
+    },
+    'bricks': {
+      'red_brick': AppAssets.defaultItem,
+      'concrete_block': AppAssets.defaultItem,
+    },
+    'hardware': {
+      'nail': AppAssets.defaultItem,
+      'screw': AppAssets.defaultItem,
+      'bolt': AppAssets.defaultItem,
+    },
+    'roofing': {
+      'aluminum_sheet': AppAssets.defaultItem,
+      'tile': AppAssets.defaultItem,
+    },
+    'other': {'misc': AppAssets.defaultItem},
   };
 
+  // Predefined categories list for easy access
+  static List<String> get categoryNames => categoryItems.keys.toList();
+
   // Predefined categories
-  static const List<String> predefinedCategories = [
-    'Cement',
-    'Steel',
-    'Timber',
-    'Paint',
-    'Bricks',
-    'Tools',
-    'Electrical',
-    'Plumbing',
-    'Roofing',
-    'Hardware',
-    'Other',
-  ];
+  // static const List<String> categoryItems = [
+  //   'Cement',
+  //   'Steel',
+  //   'Timber',
+  //   'Paint',
+  //   'Bricks',
+  //   'Tools',
+  //   'Electrical',
+  //   'Plumbing',
+  //   'Roofing',
+  //   'Hardware',
+  //   'Other',
+  // ];
 }

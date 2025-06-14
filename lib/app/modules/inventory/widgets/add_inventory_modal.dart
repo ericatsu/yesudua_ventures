@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 import 'package:yesudua_ventures/app/modules/inventory/inventory_controller.dart';
+import 'package:yesudua_ventures/app/core/utils/constants.dart';
 
 class AddInventoryModal extends StatefulWidget {
   final InventoryController controller;
-  final InventoryItemModel? editItem; // Optional for edit mode
-  final VoidCallback onItemAdded; // Callback when item is added or updated
+  final InventoryItemModel? editItem;
+  final VoidCallback onItemAdded;
 
   const AddInventoryModal({
     super.key,
@@ -28,6 +29,9 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
 
   int? _selectedCategoryId;
   int? _selectedSupplierId;
+  String? _selectedProductVariant;
+  String? _selectedCategoryName;
+  String? _customProductName;
 
   bool get isEditMode => widget.editItem != null;
 
@@ -42,13 +46,30 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
       _sellPriceController.text = widget.editItem!.sellPrice.toString();
       _selectedCategoryId = widget.editItem!.categoryId;
       _selectedSupplierId = widget.editItem!.supplierId;
+      _selectedCategoryName = widget.editItem!.categoryName?.toLowerCase();
+
+      // Try to find matching product variant from existing name
+      _findMatchingVariant();
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.controller.categories.isEmpty) {
-        widget.controller.ensurePredefinedCategories();
+        widget.controller.ensurecategoryItems();
       }
     });
+  }
+
+  void _findMatchingVariant() {
+    if (_selectedCategoryName != null &&
+        AppConstants.categoryItems.containsKey(_selectedCategoryName)) {
+      final variants = AppConstants.categoryItems[_selectedCategoryName!]!;
+      for (String variant in variants.keys) {
+        if (_nameController.text.toLowerCase().contains(variant)) {
+          _selectedProductVariant = variant;
+          break;
+        }
+      }
+    }
   }
 
   @override
@@ -60,13 +81,168 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
     super.dispose();
   }
 
+  void _onCategoryChanged(int? categoryId) {
+    setState(() {
+      _selectedCategoryId = categoryId;
+      _selectedProductVariant = null;
+      _customProductName = null;
+
+      if (categoryId != null) {
+        final category = widget.controller.findCategoryById(categoryId);
+        _selectedCategoryName = category?.name.toLowerCase();
+
+        // Auto-fill name if a product variant is available
+        if (_selectedCategoryName != null &&
+            AppConstants.categoryItems.containsKey(_selectedCategoryName!)) {
+          _nameController.clear();
+        }
+      } else {
+        _selectedCategoryName = null;
+      }
+    });
+  }
+
+  void _onProductVariantChanged(String? variant) {
+    setState(() {
+      _selectedProductVariant = variant;
+      if (variant != null && variant != 'custom') {
+        _nameController.text = variant.replaceAll('_', ' ').toUpperCase();
+        _customProductName = null;
+      } else if (variant == 'custom') {
+        _nameController.clear();
+      }
+    });
+  }
+
+  Widget _buildProductVariantSelector() {
+    if (_selectedCategoryName == null ||
+        !AppConstants.categoryItems.containsKey(_selectedCategoryName!)) {
+      return const SizedBox.shrink();
+    }
+
+    final variants = AppConstants.categoryItems[_selectedCategoryName!]!;
+
+    return Column(
+      children: [
+        DropdownButtonFormField<String>(
+          decoration: const InputDecoration(
+            labelText: 'Product Variant',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.inventory_2),
+          ),
+          value: _selectedProductVariant,
+          items: [
+            ...variants.keys.map((variant) {
+              return DropdownMenuItem<String>(
+                value: variant,
+                child: Row(
+                  children: [
+                    Image.asset(
+                      variants[variant]!,
+                      width: 24,
+                      height: 24,
+                      errorBuilder:
+                          (context, error, stackTrace) =>
+                              const Icon(Icons.image_not_supported, size: 24),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(variant.replaceAll('_', ' ').toUpperCase()),
+                  ],
+                ),
+              );
+            }).toList(),
+            const DropdownMenuItem<String>(
+              value: 'custom',
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 24),
+                  SizedBox(width: 8),
+                  Text('Custom Product Name'),
+                ],
+              ),
+            ),
+          ],
+          onChanged: _onProductVariantChanged,
+        ),
+        const SizedBox(height: 16.0),
+
+        // Show custom name field if 'custom' is selected
+        if (_selectedProductVariant == 'custom')
+          TextFormField(
+            decoration: const InputDecoration(
+              labelText: 'Custom Product Name *',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.edit),
+            ),
+            onChanged: (value) {
+              _customProductName = value;
+              _nameController.text = value;
+            },
+            validator: (value) {
+              if (_selectedProductVariant == 'custom' &&
+                  (value == null || value.isEmpty)) {
+                return 'Please enter custom product name';
+              }
+              return null;
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProductPreview() {
+    String? imagePath;
+
+    if (_selectedCategoryName != null && _selectedProductVariant != null) {
+      final variants = AppConstants.categoryItems[_selectedCategoryName!];
+      if (variants != null && variants.containsKey(_selectedProductVariant!)) {
+        imagePath = variants[_selectedProductVariant!];
+      }
+    }
+
+    if (imagePath == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Product Preview',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8.0),
+          Image.asset(
+            imagePath,
+            width: 80,
+            height: 80,
+            errorBuilder:
+                (context, error, stackTrace) =>
+                    const Icon(Icons.image_not_supported, size: 80),
+          ),
+          const SizedBox(height: 8.0),
+          Text(
+            _nameController.text.isNotEmpty
+                ? _nameController.text
+                : 'Product Name',
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20.0),
           topRight: Radius.circular(20.0),
         ),
@@ -87,25 +263,7 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
               key: _formKey,
               child: Column(
                 children: [
-                  // Item Name Field
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Item Name *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.inventory),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter item name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-
                   // Category Dropdown
-                    // Category Dropdown
                   Obx(() {
                     if (widget.controller.isLoadingCategories.value ||
                         widget.controller.categories.isEmpty) {
@@ -129,11 +287,7 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
                               child: Text(category.name),
                             );
                           }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCategoryId = value;
-                        });
-                      },
+                      onChanged: _onCategoryChanged,
                       validator: (value) {
                         if (value == null) {
                           return 'Please select a category';
@@ -142,6 +296,32 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
                       },
                     );
                   }),
+                  const SizedBox(height: 16.0),
+
+                  // Product Variant Selector
+                  _buildProductVariantSelector(),
+
+                  // Product Preview
+                  _buildProductPreview(),
+
+                  // Item Name Field (read-only if variant selected)
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Item Name *',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.inventory),
+                      enabled:
+                          _selectedProductVariant == null ||
+                          _selectedProductVariant == 'custom',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter item name';
+                      }
+                      return null;
+                    },
+                  ),
                   const SizedBox(height: 16.0),
 
                   // Quantity Field
@@ -293,7 +473,6 @@ class _AddInventoryModalState extends State<AddInventoryModal> {
         supplierId: _selectedSupplierId,
         lastRestocked:
             isEditMode ? widget.editItem!.lastRestocked : DateTime.now(),
-        // The following fields will be automatically populated by the repository
         categoryName:
             widget.controller.findCategoryById(_selectedCategoryId!)?.name,
         supplierName:

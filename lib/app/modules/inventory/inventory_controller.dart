@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:yesudua_ventures/app/core/utils/assets.dart';
 import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 import 'package:yesudua_ventures/app/data/repositories/inventory_repository.dart';
 import 'package:yesudua_ventures/app/core/utils/constants.dart';
@@ -36,7 +37,7 @@ class InventoryController extends GetxController {
     fetchAllInventory();
     fetchAllCategories();
     fetchAllSuppliers();
-    ensurePredefinedCategories();
+    ensurecategoryItems();
 
     // Listen to changes in search query
     debounce(
@@ -87,7 +88,7 @@ class InventoryController extends GetxController {
     }
   }
 
-  Future<void> ensurePredefinedCategories() async {
+  Future<void> ensurecategoryItems() async {
     try {
       final existingCategories = await _repository.getAllCategories();
 
@@ -96,7 +97,7 @@ class InventoryController extends GetxController {
           existingCategories.map((c) => c.name.toLowerCase()).toSet();
 
       // Add any predefined categories that don't exist yet
-      for (final categoryName in AppConstants.predefinedCategories) {
+      for (final categoryName in AppConstants.categoryItems.keys) {
         if (!existingCategoryNames.contains(categoryName.toLowerCase())) {
           await _repository.addCategory(CategoryModel(name: categoryName));
         }
@@ -108,7 +109,7 @@ class InventoryController extends GetxController {
       Get.snackbar('Error', 'Failed to initialize predefined categories: $e');
     }
   }
-  
+
   // Filter by category
   Future<void> filterByCategory() async {
     if (selectedCategory.value == null) {
@@ -312,17 +313,55 @@ class InventoryController extends GetxController {
 
   // Get image path for inventory item based on category
   String getImagePathForItem(InventoryItemModel item) {
-    if (item.categoryName == null) return AppConstants.itemImages['default']!;
+    if (item.categoryName == null) {
+      return AppConstants.categoryItems['other']?['image'] ??
+          AppAssets.defaultItem;
+    }
 
     final categoryNameLower = item.categoryName!.toLowerCase();
+    final itemNameLower = item.name.toLowerCase();
 
-    for (final key in AppConstants.itemImages.keys) {
-      if (categoryNameLower.contains(key)) {
-        return AppConstants.itemImages[key]!;
+    // Check if category exists in our predefined categories
+    if (AppConstants.categoryItems.containsKey(categoryNameLower)) {
+      final variants = AppConstants.categoryItems[categoryNameLower]!;
+
+      // First, try to find exact variant match based on item name
+      for (String variant in variants.keys) {
+        if (itemNameLower.contains(variant.toLowerCase()) ||
+            variant.toLowerCase().contains(itemNameLower)) {
+          return variants[variant]!;
+        }
+      }
+
+      // If no specific variant found, return the first available image
+      if (variants.isNotEmpty) {
+        return variants.values.first;
       }
     }
 
-    return AppConstants.itemImages['default']!;
+    // Fallback: try to find category by partial matching
+    for (final categoryKey in AppConstants.categoryItems.keys) {
+      if (categoryNameLower.contains(categoryKey) ||
+          itemNameLower.contains(categoryKey)) {
+        final variants = AppConstants.categoryItems[categoryKey]!;
+
+        // Try to find specific variant
+        for (String variant in variants.keys) {
+          if (itemNameLower.contains(variant.toLowerCase())) {
+            return variants[variant]!;
+          }
+        }
+
+        // Return first available image for this category
+        if (variants.isNotEmpty) {
+          return variants.values.first;
+        }
+      }
+    }
+
+    // Final fallback
+    return AppConstants.categoryItems['other']?['image'] ??
+        AppAssets.defaultItem;
   }
 
   // Find category by ID

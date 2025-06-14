@@ -6,10 +6,15 @@ class AppAssets {
   static String background = '$baseImagePath/BG.png';
 
   // Construction item images
-  static String cement = '$baseImagePath/cement.png';
+  static String dangote = '$baseImagePath/dangote.jpeg';
+  static String ghacem = '$baseImagePath/ghacem.png';
   static String steel = '$baseImagePath/steel.jpeg';
-  static String timber = '$baseImagePath/timber.jpeg';
-  static String paint = '$baseImagePath/paint.jpeg';
+  static String hard_4x4 = '$baseImagePath/hard_4x4.jpeg';
+  static String soft_4x4 = '$baseImagePath/soft_4x4.jpeg';
+  static String coral = '$baseImagePath/coral.jpeg';
+  static String deluxy = '$baseImagePath/deluxy.webp';
+  static String leyland = '$baseImagePath/leyland_paint.jpeg';
+  static String neuce = '$baseImagePath/neuce.webp';
   static String tools = '$baseImagePath/tools.jpeg';
   static String electrical = '$baseImagePath/electrical.jpeg';
   static String plumbing = '$baseImagePath/plumbing.jpeg';
