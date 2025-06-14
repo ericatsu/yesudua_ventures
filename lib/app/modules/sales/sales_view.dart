@@ -14,13 +14,16 @@ class SalesView extends StatelessWidget {
     final controller = Get.find<SalesController>();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Sales'),
+        backgroundColor: Colors.white,
+        elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
           // Search action
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, color: Colors.black87),
             onPressed: () {
               showSearch(
                 context: context,
@@ -38,7 +41,7 @@ class SalesView extends StatelessWidget {
               isLabelVisible: controller.selectedItems.isNotEmpty,
               label: Text('${controller.selectedItems.length}'),
               child: IconButton(
-                icon: const Icon(Icons.shopping_cart),
+                icon: const Icon(Icons.shopping_cart, color: Colors.black87),
                 onPressed: () {
                   if (controller.selectedItems.isEmpty) {
                     Get.snackbar(
@@ -56,36 +59,53 @@ class SalesView extends StatelessWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Category filter section
             Container(
               height: 50,
-              margin: const EdgeInsets.only(bottom: 8),
+              margin: const EdgeInsets.only(bottom: 16),
               child: Obx(
                 () => ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      padding: const EdgeInsets.only(right: 8.0),
                       child: FilterChip(
                         selected: controller.selectedCategoryId.value == null,
-                        label: const Text('All Items'),
+                        selectedColor: Colors.orange.shade400,
+                        backgroundColor: Colors.grey.shade200,
+                        label: Text(
+                          'All',
+                          style: TextStyle(
+                            color:
+                                controller.selectedCategoryId.value == null
+                                    ? Colors.white
+                                    : Colors.black87,
+                          ),
+                        ),
                         onSelected: (_) {
                           controller.selectedCategoryId.value = null;
                         },
                       ),
                     ),
                     ...controller.categories.map((category) {
+                      final isSelected =
+                          controller.selectedCategoryId.value == category.id;
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        padding: const EdgeInsets.only(right: 8.0),
                         child: FilterChip(
-                          selected:
-                              controller.selectedCategoryId.value ==
-                              category.id,
-                          label: Text(category.name),
+                          selected: isSelected,
+                          selectedColor: Colors.orange.shade400,
+                          backgroundColor: Colors.grey.shade200,
+                          label: Text(
+                            category.name,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                            ),
+                          ),
                           onSelected: (_) {
                             controller.selectedCategoryId.value = category.id;
                           },
@@ -103,15 +123,20 @@ class SalesView extends StatelessWidget {
                 if (controller.isLoading.value) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (controller.filteredInventoryItems.isEmpty) {
-                  return const Center(child: Text('No items found'));
+                  return const Center(
+                    child: Text(
+                      'No items found',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  );
                 } else {
                   return GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 1,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
+                          crossAxisCount: 4,
+                          childAspectRatio: 0.75,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
                         ),
                     itemCount: controller.filteredInventoryItems.length,
                     itemBuilder: (context, index) {
@@ -135,8 +160,12 @@ class SalesView extends StatelessWidget {
           visible: controller.selectedItems.isNotEmpty,
           child: FloatingActionButton.extended(
             onPressed: () => Get.to(() => const SalesCartView()),
-            label: Text('View Cart (${controller.selectedItems.length})'),
-            icon: const Icon(Icons.shopping_cart_checkout),
+            backgroundColor: Colors.orange.shade400,
+            label: Text(
+              'View Cart (${controller.selectedItems.length})',
+              style: const TextStyle(color: Colors.white),
+            ),
+            icon: const Icon(Icons.shopping_cart_checkout, color: Colors.white),
           ),
         ),
       ),
@@ -156,6 +185,9 @@ class SalesView extends StatelessWidget {
       context: context,
       builder:
           (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             title: const Text('Add to Cart'),
             content: Form(
               key: formKey,
@@ -171,9 +203,11 @@ class SalesView extends StatelessWidget {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Quantity',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -201,6 +235,9 @@ class SalesView extends StatelessWidget {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade400,
+                ),
                 onPressed: () {
                   if (formKey.currentState!.validate()) {
                     final quantity = double.parse(quantityController.text);
@@ -225,7 +262,10 @@ class SalesView extends StatelessWidget {
                     );
                   }
                 },
-                child: const Text('Add to Cart'),
+                child: const Text(
+                  'Add to Cart',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -322,7 +362,7 @@ class InventorySearchDelegate extends SearchDelegate<InventoryItemModel?> {
               return ListTile(
                 title: Text(item.name),
                 subtitle: Text(
-                  '${item.categoryName ?? "Uncategorized"} - GHS ${item.sellPrice.toStringAsFixed(2)}',
+                  '${item.categoryName ?? "Uncategorized"} - \$${item.sellPrice.toStringAsFixed(2)}',
                 ),
                 trailing: Text('Stock: ${item.quantity}'),
                 onTap: () {
