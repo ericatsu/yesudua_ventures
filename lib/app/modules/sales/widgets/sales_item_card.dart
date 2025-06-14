@@ -24,7 +24,7 @@ class SalesItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -66,7 +66,10 @@ class SalesItemCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.7),
+                    ],
                   ),
                 ),
               ),
@@ -81,12 +84,12 @@ class SalesItemCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       item.quantity > 0
-                          ? Colors.green.withOpacity(0.9)
-                          : Colors.red.withOpacity(0.9),
+                          ? Colors.green.withValues(alpha: 0.9)
+                          : Colors.red.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -114,7 +117,7 @@ class SalesItemCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.9),
+                    color: Colors.red.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -171,7 +174,7 @@ class SalesItemCard extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
@@ -204,7 +207,7 @@ class SalesItemCard extends StatelessWidget {
                                   color: (item.quantity > 0
                                           ? Colors.orange.shade600
                                           : Colors.grey.shade600)
-                                      .withOpacity(0.4),
+                                      .withValues(alpha: 0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),

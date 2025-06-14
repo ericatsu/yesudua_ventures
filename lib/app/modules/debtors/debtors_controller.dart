@@ -37,7 +37,6 @@ class DebtorsController extends GetxController {
       debtors.value = await _salesRepository.getAllDebtors();
     } catch (e) {
       errorMessage.value = 'Failed to load debtors: ${e.toString()}';
-      print('Error fetching debtors: $e');
     } finally {
       isLoading.value = false;
     }
@@ -54,7 +53,6 @@ class DebtorsController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = 'Failed to load debtor details: ${e.toString()}';
-      print('Error fetching debtor details: $e');
     } finally {
       isLoading.value = false;
     }
@@ -94,7 +92,6 @@ class DebtorsController extends GetxController {
       return success;
     } catch (e) {
       errorMessage.value = 'Failed to record payment: ${e.toString()}';
-      print('Error recording payment: $e');
       return false;
     } finally {
       isLoading.value = false;

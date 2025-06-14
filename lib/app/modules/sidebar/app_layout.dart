@@ -12,10 +12,7 @@ class AppLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Force update current route when layout is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Setting the currentRoute when layout is built helps ensure
-      // the sidebar is properly highlighting the active item
       if (Get.currentRoute != AppRoutes.login && Get.currentRoute.isNotEmpty) {
         controller.updateCurrentRoute(Get.currentRoute);
       }
@@ -26,7 +23,6 @@ class AppLayout extends StatelessWidget {
         if (!controller.shouldShowSidebar) {
           return child;
         }
-        // Show sidebar for all other pages
         return Row(children: [const SideBar(), Expanded(child: child)]);
       }),
     );

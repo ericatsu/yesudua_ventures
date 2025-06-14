@@ -59,7 +59,6 @@ class SalesController extends GetxController {
       categories.value = await _inventoryRepository.getAllCategories();
     } catch (e) {
       errorMessage.value = 'Failed to load categories: ${e.toString()}';
-      print('Error fetching categories: $e');
     }
   }
 
@@ -70,7 +69,6 @@ class SalesController extends GetxController {
       inventoryItems.value = await _inventoryRepository.getAllInventoryItems();
     } catch (e) {
       errorMessage.value = 'Failed to load inventory: ${e.toString()}';
-      print('Error fetching inventory items: $e');
     } finally {
       isLoading.value = false;
     }
@@ -82,7 +80,6 @@ class SalesController extends GetxController {
       return await _inventoryRepository.searchInventoryItems(query);
     } catch (e) {
       errorMessage.value = 'Search failed: ${e.toString()}';
-      print('Error searching inventory: $e');
       return [];
     }
   }
@@ -106,7 +103,6 @@ class SalesController extends GetxController {
       );
     } catch (e) {
       errorMessage.value = 'Failed to load sales: ${e.toString()}';
-      print('Error fetching sales: $e');
     } finally {
       isLoading.value = false;
     }
@@ -128,7 +124,6 @@ class SalesController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = 'Failed to load sale details: ${e.toString()}';
-      print('Error fetching sale details: $e');
     } finally {
       isLoading.value = false;
     }
@@ -292,7 +287,6 @@ class SalesController extends GetxController {
       return true;
     } catch (e) {
       errorMessage.value = 'Failed to save sale: ${e.toString()}';
-      print('Error saving sale: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -324,7 +318,6 @@ class SalesController extends GetxController {
       return success;
     } catch (e) {
       errorMessage.value = 'Failed to update payment: ${e.toString()}';
-      print('Error updating payment: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -354,7 +347,6 @@ class SalesController extends GetxController {
       return success;
     } catch (e) {
       errorMessage.value = 'Failed to delete sale: ${e.toString()}';
-      print('Error deleting sale: $e');
       return false;
     } finally {
       isLoading.value = false;
