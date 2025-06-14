@@ -16,9 +16,8 @@ class AppLayout extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Setting the currentRoute when layout is built helps ensure
       // the sidebar is properly highlighting the active item
-      if (controller.currentRoute.value != Get.currentRoute &&
-          Get.currentRoute != AppRoutes.login) {
-        controller.currentRoute.value = Get.currentRoute;
+      if (Get.currentRoute != AppRoutes.login && Get.currentRoute.isNotEmpty) {
+        controller.updateCurrentRoute(Get.currentRoute);
       }
     });
 

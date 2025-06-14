@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sidebarx/sidebarx.dart';
 import 'package:yesudua_ventures/app/routes/app_routes.dart';
 
 class SidebarController extends GetxController {
-  // Use a reactive string to track current route
-  final RxString currentRoute = ''.obs;
-  final RxBool isExpanded = true.obs;
+  late SidebarXController sidebarXController;
   final RxBool _showSidebar = false.obs;
 
   // Routes where sidebar should be visible
@@ -21,40 +20,62 @@ class SidebarController extends GetxController {
   // Routes where sidebar should not be visible
   final List<String> noSidebarRoutes = [AppRoutes.login];
 
+  // Map routes to sidebar indices
+  final Map<String, int> routeToIndex = {
+    AppRoutes.sales: 0,
+    AppRoutes.dashboard: 1,
+    AppRoutes.inventory: 2,
+    AppRoutes.debtors: 3,
+    AppRoutes.suppliers: 4,
+    AppRoutes.receipts: 5,
+  };
+
+  final Map<int, String> indexToRoute = {
+    0: AppRoutes.sales,
+    1: AppRoutes.dashboard,
+    2: AppRoutes.inventory,
+    3: AppRoutes.debtors,
+    4: AppRoutes.suppliers,
+    5: AppRoutes.receipts,
+  };
+
   @override
   void onInit() {
     super.onInit();
 
-    // Set initial route and sidebar visibility
-    currentRoute.value = Get.currentRoute;
+    // Initialize SidebarX controller with Sales (index 0) as default
+    sidebarXController = SidebarXController(selectedIndex: 0, extended: true);
+
+    // Set initial sidebar visibility
     _updateSidebarVisibility();
 
-    // Listen for route changes and update sidebar visibility
-    ever(currentRoute, (_) => _updateSidebarVisibility());
-
-    // Use GetX's navigation observer to update the current route
-    Get.rootController.addListener(() {
-      if (Get.currentRoute != currentRoute.value) {
-        currentRoute.value = Get.currentRoute;
+    // Listen to sidebar selection changes
+    sidebarXController.addListener(() {
+      final selectedRoute = indexToRoute[sidebarXController.selectedIndex];
+      if (selectedRoute != null) {
+        _navigateToRoute(selectedRoute);
       }
     });
 
     // Check screen size for initial sidebar state
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.mediaQuery.size.width < 600) {
-        isExpanded.value = false;
+        sidebarXController.setExtended(false);
       }
     });
   }
 
   void _updateSidebarVisibility() {
-    // Show sidebar if the current route is in sidebarRoutes
-    // and not in noSidebarRoutes
+    final currentRoute = Get.currentRoute;
     _showSidebar.value =
-        sidebarRoutes.contains(currentRoute.value) ||
-        (!noSidebarRoutes.contains(currentRoute.value) &&
-            currentRoute.value.isNotEmpty);
-    // No need for update() call with reactive values
+        sidebarRoutes.contains(currentRoute) ||
+        (!noSidebarRoutes.contains(currentRoute) && currentRoute.isNotEmpty);
+  }
+
+  void _navigateToRoute(String route) {
+    if (Get.currentRoute != route) {
+      Get.toNamed(route);
+    }
   }
 
   // Getter that can be used with Obx
@@ -63,7 +84,8 @@ class SidebarController extends GetxController {
   // Method to explicitly show sidebar - useful after authentication
   void showSidebar() {
     _showSidebar.value = true;
-    // No need for update() call with reactive values
+    // Set Sales as the default active item when sidebar is first shown after login
+    sidebarXController.selectIndex(0); // Sales index
   }
 
   // Method to handle logout
@@ -74,14 +96,24 @@ class SidebarController extends GetxController {
 
   // Navigation helper
   void navigateTo(String route) {
-    if (currentRoute.value != route) {
-      Get.toNamed(route);
+    final index = routeToIndex[route];
+    if (index != null) {
+      sidebarXController.selectIndex(index);
     }
+  }
+
+  // Update sidebar selection when route changes externally
+  void updateCurrentRoute(String route) {
+    final index = routeToIndex[route];
+    if (index != null && sidebarXController.selectedIndex != index) {
+      sidebarXController.selectIndex(index);
+    }
+    _updateSidebarVisibility();
   }
 
   @override
   void onClose() {
-    // Clean up any resources
+    sidebarXController.dispose();
     super.onClose();
   }
 }
