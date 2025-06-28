@@ -84,8 +84,22 @@ class SidebarController extends GetxController {
   // Method to explicitly show sidebar - useful after authentication
   void showSidebar() {
     _showSidebar.value = true;
-    // Set Sales as the default active item when sidebar is first shown after login
+    // Set Sales as the default active item and navigate to it
     sidebarXController.selectIndex(0); // Sales index
+
+    // Navigate to Sales route immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navigateToRoute(AppRoutes.sales);
+    });
+  }
+
+  // Alternative method for post-login navigation
+  void showSidebarAndNavigateToSales() {
+    _showSidebar.value = true;
+    sidebarXController.selectIndex(0);
+    Get.offAllNamed(
+      AppRoutes.sales,
+    ); // Use offAllNamed to clear login from stack
   }
 
   // Method to handle logout
