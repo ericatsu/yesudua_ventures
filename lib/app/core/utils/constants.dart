@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:yesudua_ventures/app/core/utils/assets.dart';
 
@@ -94,18 +95,10 @@ class AppConstants {
   // Predefined categories list for easy access
   static List<String> get categoryNames => categoryItems.keys.toList();
 
-  // Predefined categories
-  // static const List<String> categoryItems = [
-  //   'Cement',
-  //   'Steel',
-  //   'Timber',
-  //   'Paint',
-  //   'Bricks',
-  //   'Tools',
-  //   'Electrical',
-  //   'Plumbing',
-  //   'Roofing',
-  //   'Hardware',
-  //   'Other',
-  // ];
+  static const double defaultSpacing = 16.0;
+  static const double sectionSpacing = 24.0;
+
+  static const TextInputType numberInputType = TextInputType.numberWithOptions(
+    decimal: true,
+  );
 }
