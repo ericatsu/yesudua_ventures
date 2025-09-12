@@ -24,6 +24,18 @@ class DebtorsController extends GetxController {
     fetchAllDebtors();
   }
 
+  // Add this method to handle page refreshes
+  @override
+  void onReady() {
+    super.onReady();
+
+    // Check if we have arguments (debtor ID) when the controller is ready
+    final arguments = Get.arguments;
+    if (arguments is int) {
+      getDebtorById(arguments);
+    }
+  }
+
   @override
   void onClose() {
     paymentController.dispose();
@@ -33,6 +45,7 @@ class DebtorsController extends GetxController {
   // Fetch all debtors
   Future<void> fetchAllDebtors() async {
     isLoading.value = true;
+    errorMessage.value = ''; // Clear previous errors
     try {
       debtors.value = await _salesRepository.getAllDebtors();
     } catch (e) {
@@ -45,14 +58,18 @@ class DebtorsController extends GetxController {
   // Get debtor details by ID
   Future<void> getDebtorById(int debtorId) async {
     isLoading.value = true;
+    errorMessage.value = ''; // Clear previous errors
     try {
       selectedDebtor.value = await _salesRepository.getDebtorById(debtorId);
       if (selectedDebtor.value != null) {
         paymentController.text = '0.0';
         newPaymentAmount.value = 0.0;
+      } else {
+        errorMessage.value = 'Debtor not found';
       }
     } catch (e) {
       errorMessage.value = 'Failed to load debtor details: ${e.toString()}';
+      selectedDebtor.value = null; // Ensure it's null on error
     } finally {
       isLoading.value = false;
     }
@@ -68,7 +85,10 @@ class DebtorsController extends GetxController {
     isLoading.value = true;
     try {
       final debtor = selectedDebtor.value;
-      if (debtor == null) return false;
+      if (debtor == null) {
+        errorMessage.value = 'No debtor selected';
+        return false;
+      }
 
       final totalPaid = debtor.paidAmount + amount;
       final isPaid = totalPaid >= debtor.totalDebt;
@@ -96,5 +116,10 @@ class DebtorsController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Method to refresh data when returning to debtors list
+  void refreshDebtorsList() {
+    fetchAllDebtors();
   }
 }

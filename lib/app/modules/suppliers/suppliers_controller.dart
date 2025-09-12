@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:yesudua_ventures/app/core/utils/app_utils.dart';
 import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 import 'package:yesudua_ventures/app/data/repositories/inventory_repository.dart';
 
@@ -72,12 +73,12 @@ class SuppliersController extends GetxController {
         final newSupplier = supplier.copyWith(id: id);
         suppliers.add(newSupplier);
         Get.back(); // Close dialog
-        Get.snackbar('Success', '${supplier.name} added successfully');
+        AppUtils.showSuccess('Success', '${supplier.name} added successfully');
         return true;
       }
       return false;
     } catch (e) {
-      Get.snackbar('Error', 'Failed to add supplier: $e');
+      AppUtils.showError('Error', 'Failed to add supplier: $e');
       return false;
     }
   }
@@ -93,12 +94,12 @@ class SuppliersController extends GetxController {
           suppliers.refresh();
         }
         Get.back(); // Close dialog
-        Get.snackbar('Success', '${supplier.name} updated successfully');
+        AppUtils.showSuccess('Success', '${supplier.name} updated successfully');
         return true;
       }
       return false;
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update supplier: $e');
+      AppUtils.showError('Error', 'Failed to update supplier: $e');
       return false;
     }
   }
@@ -109,17 +110,17 @@ class SuppliersController extends GetxController {
       final success = await _repository.deleteSupplier(id);
       if (success) {
         suppliers.removeWhere((supplier) => supplier.id == id);
-        Get.snackbar('Success', 'Supplier deleted successfully');
+        AppUtils.showSuccess('Success', 'Supplier deleted successfully');
         return true;
       } else {
-        Get.snackbar(
+        AppUtils.showError(
           'Error',
           'Cannot delete supplier that is linked to inventory items',
         );
         return false;
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete supplier: $e');
+      AppUtils.showError('Error', 'Failed to delete supplier: $e');
       return false;
     }
   }
@@ -134,7 +135,7 @@ class SuppliersController extends GetxController {
     try {
       return await _repository.getSupplyHistoryBySupplier(supplierId);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load supplier history: $e');
+      AppUtils.showError('Error', 'Failed to load supplier history: $e');
       return [];
     }
   }

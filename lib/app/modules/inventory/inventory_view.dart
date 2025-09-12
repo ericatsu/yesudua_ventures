@@ -15,6 +15,7 @@ class InventoryView extends GetView<InventoryController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventory Management'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.sort),

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:yesudua_ventures/app/core/utils/assets.dart';
 import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
@@ -27,6 +28,13 @@ class InventoryController extends GetxController {
   final RxString sortBy =
       'name'.obs; // Options: 'name', 'quantity', 'sellPrice'
   final RxBool sortAscending = true.obs;
+
+  // Add inventory form state management
+  final RxInt selectedCategoryId = 0.obs;
+  final RxnInt selectedSupplierId = RxnInt();
+  final RxString selectedProductVariant = ''.obs;
+  final RxString selectedCategoryName = ''.obs;
+  final RxString customProductName = ''.obs;
 
   // Constructor
   InventoryController(this._repository);
@@ -381,5 +389,138 @@ class InventoryController extends GetxController {
     } catch (e) {
       return null;
     }
+  }
+
+  // Reset form state
+  void resetFormState() {
+    selectedCategoryId.value = 0;
+    selectedSupplierId.value = null;
+    selectedProductVariant.value = '';
+    selectedCategoryName.value = '';
+    customProductName.value = '';
+  }
+
+  // Initialize form for editing
+  void initializeFormForEdit(InventoryItemModel item) {
+    selectedCategoryId.value = item.categoryId;
+    selectedSupplierId.value = item.supplierId;
+    selectedCategoryName.value = item.categoryName?.toLowerCase() ?? '';
+    findMatchingVariant(item.name);
+  }
+
+  // Find matching product variant
+  void findMatchingVariant(String itemName) {
+    if (selectedCategoryName.value.isNotEmpty &&
+        AppConstants.categoryItems.containsKey(selectedCategoryName.value)) {
+      final variants = AppConstants.categoryItems[selectedCategoryName.value]!;
+      for (String variant in variants.keys) {
+        if (itemName.toLowerCase().contains(variant)) {
+          selectedProductVariant.value = variant;
+          break;
+        }
+      }
+    }
+  }
+
+  // Handle category change
+  void onCategoryChanged(int? categoryId) {
+    selectedCategoryId.value = categoryId ?? 0;
+    selectedProductVariant.value = '';
+    customProductName.value = '';
+
+    if (categoryId != null) {
+      final category = findCategoryById(categoryId);
+      selectedCategoryName.value = category?.name.toLowerCase() ?? '';
+    } else {
+      selectedCategoryName.value = '';
+    }
+  }
+
+  // Handle product variant change
+  String onProductVariantChanged(String? variant) {
+    selectedProductVariant.value = variant ?? '';
+    if (variant != null && variant != 'custom') {
+      customProductName.value = '';
+      return variant.replaceAll('_', ' ').toUpperCase();
+    } else if (variant == 'custom') {
+      return '';
+    }
+    return '';
+  }
+
+  // Get available variants for current category
+  Map<String, String>? getAvailableVariants() {
+    if (selectedCategoryName.value.isNotEmpty &&
+        AppConstants.categoryItems.containsKey(selectedCategoryName.value)) {
+      return AppConstants.categoryItems[selectedCategoryName.value];
+    }
+    return null;
+  }
+
+  // Get product image path
+  String? getProductImagePath() {
+    if (selectedCategoryName.value.isNotEmpty &&
+        selectedProductVariant.value.isNotEmpty) {
+      final variants = AppConstants.categoryItems[selectedCategoryName.value];
+      if (variants != null &&
+          variants.containsKey(selectedProductVariant.value)) {
+        return variants[selectedProductVariant.value];
+      }
+    }
+    return null;
+  }
+
+  // Save inventory item (handles both add and update)
+  Future<bool> saveInventoryItem({
+    required String name,
+    required double quantity,
+    required double boughtPrice,
+    required double sellPrice,
+    InventoryItemModel? editItem,
+  }) async {
+    final itemData = InventoryItemModel(
+      id: editItem?.id,
+      name: name.trim(),
+      categoryId: selectedCategoryId.value,
+      quantity: quantity,
+      boughtPrice: boughtPrice,
+      sellPrice: sellPrice,
+      supplierId: selectedSupplierId.value,
+      lastRestocked: editItem?.lastRestocked ?? DateTime.now(),
+      categoryName: findCategoryById(selectedCategoryId.value)?.name,
+      supplierName: findSupplierById(selectedSupplierId.value)?.name,
+    );
+
+    // Show loading indicator
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    // Save or update item
+    final success =
+        editItem != null
+            ? await updateInventoryItem(itemData)
+            : await addInventoryItem(itemData);
+
+    // Close loading indicator
+    Get.back();
+
+    if (success) {
+      // Reset form state
+      resetFormState();
+
+      // Show success message
+      Get.snackbar(
+        'Success',
+        editItem != null
+            ? 'Item updated successfully'
+            : 'Item added successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+      return true;
+    }
+    return false;
   }
 }

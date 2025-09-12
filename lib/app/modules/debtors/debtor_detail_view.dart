@@ -8,22 +8,68 @@ class DebtorDetailView extends GetView<DebtorsController> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the debtor ID from arguments
-    final debtorId = Get.arguments as int;
+    // Get debtor ID from arguments and fetch data
+    final debtorId = Get.arguments as int?;
 
-    // Fetch debtor details on page load
-    controller.getDebtorById(debtorId);
+    if (debtorId != null) {
+      // Fetch debtor data when the page loads
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.getDebtorById(debtorId);
+      });
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Debtor Details')),
+      appBar: AppBar(
+        title: Obx(() {
+          final debtor = controller.selectedDebtor.value;
+          return Text(
+            'Debtor Details${debtor?.name != null ? ' of ${debtor!.name}' : ''}',
+          );
+        }),
+      ),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
 
+        if (controller.errorMessage.value.isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                const SizedBox(height: 16),
+                Text(
+                  controller.errorMessage.value,
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    if (debtorId != null) {
+                      controller.getDebtorById(debtorId);
+                    }
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
         final debtor = controller.selectedDebtor.value;
         if (debtor == null) {
-          return const Center(child: Text('Debtor not found'));
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.person_off_outlined, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text('Debtor not found', style: TextStyle(fontSize: 18)),
+              ],
+            ),
+          );
         }
 
         final dateFormat = DateFormat('dd/MM/yyyy');
@@ -49,7 +95,9 @@ class DebtorDetailView extends GetView<DebtorsController> {
                               radius: 36,
                               backgroundColor: Colors.blue.shade100,
                               child: Text(
-                                debtor.name[0].toUpperCase(),
+                                debtor.name.isNotEmpty
+                                    ? debtor.name[0].toUpperCase()
+                                    : '?',
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
@@ -216,13 +264,20 @@ class DebtorDetailView extends GetView<DebtorsController> {
                       ),
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
-                        value: debtor.paidAmount / debtor.totalDebt,
+                        value:
+                            debtor.totalDebt > 0
+                                ? debtor.paidAmount / debtor.totalDebt
+                                : 0,
                         backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.green,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${(debtor.paidAmount / debtor.totalDebt * 100).toStringAsFixed(1)}% paid',
+                        debtor.totalDebt > 0
+                            ? '${(debtor.paidAmount / debtor.totalDebt * 100).toStringAsFixed(1)}% paid'
+                            : '0.0% paid',
                         style: TextStyle(color: Colors.grey.shade700),
                       ),
                     ],
@@ -239,7 +294,7 @@ class DebtorDetailView extends GetView<DebtorsController> {
               ),
               const SizedBox(height: 8),
 
-              if (debtor.paymentHistory!.isEmpty)
+              if (debtor.paymentHistory?.isEmpty ?? true)
                 Card(
                   elevation: 1,
                   child: Padding(
@@ -263,9 +318,11 @@ class DebtorDetailView extends GetView<DebtorsController> {
                         (context, index) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final payment = debtor.paymentHistory?[index];
+                      if (payment == null) return const SizedBox.shrink();
+
                       final paymentDate = DateFormat(
                         'dd/MM/yyyy HH:mm',
-                      ).format(payment!.paymentDate);
+                      ).format(payment.paymentDate);
 
                       return ListTile(
                         leading: const Icon(

@@ -5,6 +5,9 @@ import 'package:yesudua_ventures/app/modules/debtors/debtors_controller.dart';
 class DebtorsBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => DebtorsController(Get.find<SalesRepository>()));
+    Get.lazyPut<DebtorsController>(
+      () => DebtorsController(Get.find<SalesRepository>()),
+      fenix: true,
+    );
   }
 }
