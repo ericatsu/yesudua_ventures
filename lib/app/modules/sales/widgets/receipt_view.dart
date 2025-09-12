@@ -168,7 +168,6 @@ class ReceiptView extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child:
-                                    // Only allow editing if in preview mode, allowing editing, and is customer copy
                                     receipt.isPreviewMode &&
                                             allowEditing &&
                                             receipt.isCustomerCopy
