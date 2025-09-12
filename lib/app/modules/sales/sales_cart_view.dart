@@ -4,12 +4,11 @@ import 'package:yesudua_ventures/app/modules/sales/sales_controller.dart';
 import 'package:yesudua_ventures/app/modules/sales/widgets/cart_item_tile.dart';
 import 'package:yesudua_ventures/app/modules/sales/widgets/receipt_view.dart';
 
-class SalesCartView extends StatelessWidget {
+class SalesCartView extends GetView<SalesController> {
   const SalesCartView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<SalesController>();
     final formKey = GlobalKey<FormState>();
 
     return Scaffold(
