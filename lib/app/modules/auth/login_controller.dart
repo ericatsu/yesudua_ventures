@@ -30,12 +30,6 @@ class LoginController extends GetxController {
 
         // Simulate login delay
         await Future.delayed(const Duration(seconds: 2));
-
-        // You would implement actual authentication here
-        // For now, we'll just simulate a successful login
-
-        // After successful authentication:
-        // 1. Ensure sidebar is shown
         _sidebarController.showSidebar();
 
         // 2. Navigate to dashboard or sales page

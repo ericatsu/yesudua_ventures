@@ -3,12 +3,11 @@ import 'package:get/get.dart';
 import 'package:sidebarx/sidebarx.dart';
 import 'package:yesudua_ventures/app/modules/sidebar/sidebar_controller.dart';
 
-class SideBar extends StatelessWidget {
+class SideBar extends GetView<SidebarController> {
   const SideBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<SidebarController>();
     final theme = Theme.of(context);
 
     return SidebarX(

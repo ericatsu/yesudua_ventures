@@ -81,25 +81,24 @@ class SidebarController extends GetxController {
   // Getter that can be used with Obx
   bool get shouldShowSidebar => _showSidebar.value;
 
-  // Method to explicitly show sidebar - useful after authentication
   void showSidebar() {
     _showSidebar.value = true;
-    // Set Sales as the default active item and navigate to it
-    sidebarXController.selectIndex(0); // Sales index
+    sidebarXController.selectIndex(0);
 
-    // Navigate to Sales route immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _navigateToRoute(AppRoutes.sales);
     });
   }
 
-  // Alternative method for post-login navigation
   void showSidebarAndNavigateToSales() {
     _showSidebar.value = true;
+    
     sidebarXController.selectIndex(0);
-    Get.offAllNamed(
-      AppRoutes.sales,
-    ); // Use offAllNamed to clear login from stack
+    Get.offAllNamed(AppRoutes.sales);
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateSidebarVisibility();
+    });
   }
 
   // Method to handle logout
