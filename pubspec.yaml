@@ -76,8 +76,10 @@ flutter:
     - assets/fonts/
 
   fonts:
-    - family: Roboto
+    - family: OpenSans
       fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Bold.ttf
+        - asset: assets/fonts/OpenSans-Regular.ttf
+        - asset: assets/fonts/OpenSans-Bold.ttf
           weight: 700
+        - asset: assets/fonts/OpenSans-Italic.ttf
+        - asset: assets/fonts/OpenSans-BoldItalic.ttf

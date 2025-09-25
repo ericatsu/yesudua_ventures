@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/widgets.dart';
 import 'package:printing/printing.dart';
 import 'package:yesudua_ventures/app/modules/sales/widgets/receipt_view.dart';
 
@@ -51,7 +52,15 @@ class Receipt {
     doc.addPage(
       pw.Page(
         pageFormat: pageFormat,
-        margin: pw.EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 400),
+        theme: pw.ThemeData.withFont(
+          base: Font.ttf(await rootBundle.load("assets/fonts/OpenSans-Regular.ttf")),
+          bold: Font.ttf(await rootBundle.load("assets/fonts/OpenSans-Bold.ttf")),
+          italic: Font.ttf(await rootBundle.load("assets/fonts/OpenSans-Italic.ttf")),
+          boldItalic: Font.ttf(
+            await rootBundle.load("assets/fonts/OpenSans-BoldItalic.ttf"),
+          ),
+        ),
+        margin: pw.EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 20),
         build:
             (context) => pw.Container(
               width: 320,
@@ -118,11 +127,11 @@ class Receipt {
                       ),
                     ],
                   ),
-                  pw.Spacer(),
+                  pw.SizedBox(height: 20),
                   _buildFooter(context),
                 ],
               ),
-            )
+            ),
       ),
     );
 
@@ -225,7 +234,7 @@ class Receipt {
             style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
             textAlign: pw.TextAlign.center,
           ),
-          pw.SizedBox(height: 1),
+          pw.SizedBox(height: 5),
         ],
       ),
     );

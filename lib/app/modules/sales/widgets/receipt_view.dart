@@ -354,7 +354,7 @@ class ReceiptView extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  alignment: WrapAlignment.spaceEvenly,
+                  alignment: WrapAlignment.spaceBetween,
                   children: [
                     ElevatedButton.icon(
                       icon: const Icon(Icons.sync),
