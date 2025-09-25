@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
+import 'package:yesudua_ventures/app/core/services/print_service.dart';
 import 'package:yesudua_ventures/app/data/models/sales_model.dart';
 import 'package:yesudua_ventures/app/modules/sales/sales_controller.dart';
 
@@ -29,6 +32,59 @@ class ReceiptView extends StatelessWidget {
       (sum, item) => sum + (item.quantity * item.sellPrice),
     );
     return formatted ? double.parse(total.toStringAsFixed(2)) : total;
+  }
+
+  // Convert your SaleItemModel to ReceiptItem for PDF generation
+  List<ReceiptItem> _convertToReceiptItems(List<SaleItemModel> items) {
+    return items.map((item) => ReceiptItem(
+      name: item.itemName ?? 'Unknown Item',
+      quantity: item.quantity.toDouble(),
+      price: item.sellPrice,
+    )).toList();
+  }
+
+  // Method to handle PDF printing
+  Future<void> _printReceipt() async {
+    try {
+      final controller = Get.find<SalesController>();
+      
+      // Convert items to ReceiptItem format
+      final receiptItems = _convertToReceiptItems(receipt.items);
+      
+      // Get current values (considering edits)
+      final totalAmount = receipt.isCustomerCopy 
+          ? _calculateTotalAmount(receipt.items, false)
+          : receipt.sale.totalAmount;
+      
+      final paidAmount = controller.paidAmount.value;
+      
+      // Generate PDF
+      final pdfData = await generateReceipt(
+        PdfPageFormat.a4,
+        receipt.sale.customerName ?? 'Walk-in Customer',
+        receipt.sale.customerContact ?? 'N/A',
+        receiptItems,
+        totalAmount,
+        paidAmount,
+        receipt.sale.saleDate,
+        receipt.isCustomerCopy,
+      );
+
+      // Show print dialog
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdfData,
+        name: 'Receipt_${DateFormat('yyyyMMdd_HHmmss').format(receipt.sale.saleDate)}',
+      );
+    } catch (e) {
+      // Handle error
+      Get.snackbar(
+        'Error',
+        'Failed to generate receipt: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   @override
@@ -102,43 +158,41 @@ class ReceiptView extends StatelessWidget {
                     1: FlexColumnWidth(1), // Qty
                     2: FlexColumnWidth(2), // Price
                     3: FlexColumnWidth(2), // Total
-                    //4: FlexColumnWidth(2),
                   },
                   children: [
                     // Table Header
                     TableRow(
                       decoration: BoxDecoration(color: Colors.grey.shade200),
-                      children:
-                          [
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                'Item',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                'Qty',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                'Price',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                'Total',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ].where((widget) => widget != null).toList(),
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Item',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Qty',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Price',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Total',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
 
                     // Table Rows for Items
@@ -147,59 +201,55 @@ class ReceiptView extends StatelessWidget {
                       final item = entry.value;
 
                       return TableRow(
-                        children:
-                            [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(item.itemName ?? 'Unknown Item'),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(item.quantity.toString()),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child:
-                                    receipt.isPreviewMode &&
-                                            allowEditing &&
-                                            receipt.isCustomerCopy
-                                        ? TextFormField(
-                                          initialValue:
-                                              item.sellPrice.toString(),
-                                          keyboardType: TextInputType.number,
-                                          decoration: const InputDecoration(
-                                            isDense: true,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 8,
-                                                ),
-                                            border: OutlineInputBorder(),
-                                          ),
-                                          onChanged: (value) {
-                                            if (value.isNotEmpty) {
-                                              final newPrice =
-                                                  double.tryParse(value) ??
-                                                  item.sellPrice;
-                                              controller.updateItemPrice(
-                                                index,
-                                                newPrice,
-                                              );
-                                            }
-                                          },
-                                        )
-                                        : Text(
-                                          item.sellPrice.toStringAsFixed(2),
-                                        ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  (item.quantity * item.sellPrice)
-                                      .toStringAsFixed(2),
-                                ),
-                              ),
-                            ]
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(item.itemName ?? 'Unknown Item'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(item.quantity.toString()),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: receipt.isPreviewMode &&
+                                    allowEditing &&
+                                    receipt.isCustomerCopy
+                                ? TextFormField(
+                                    initialValue: item.sellPrice.toString(),
+                                    keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 8,
+                                      ),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    onChanged: (value) {
+                                      if (value.isNotEmpty) {
+                                        final newPrice =
+                                            double.tryParse(value) ??
+                                                item.sellPrice;
+                                        controller.updateItemPrice(
+                                          index,
+                                          newPrice,
+                                        );
+                                      }
+                                    },
+                                  )
+                                : Text(
+                                    item.sellPrice.toStringAsFixed(2),
+                                  ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              (item.quantity * item.sellPrice)
+                                  .toStringAsFixed(2),
+                            ),
+                          ),
+                        ],
                       );
                     }),
                   ],
@@ -234,7 +284,7 @@ class ReceiptView extends StatelessWidget {
                               child: TextFormField(
                                 initialValue:
                                     receipt.editedPaidAmount?.toString() ??
-                                    receipt.sale.paidAmount.toString(),
+                                        receipt.sale.paidAmount.toString(),
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
                                   isDense: true,
@@ -249,13 +299,12 @@ class ReceiptView extends StatelessWidget {
                                     final newPaidAmount =
                                         double.tryParse(value) ?? 0.0;
                                     controller.paidAmount.value = newPaidAmount;
-                                    controller.isPaid.value =
-                                        newPaidAmount >=
+                                    controller.isPaid.value = newPaidAmount >=
                                         (receipt.isCustomerCopy
                                             ? _calculateTotalAmount(
-                                              receipt.items,
-                                              false,
-                                            )
+                                                receipt.items,
+                                                false,
+                                              )
                                             : receipt.sale.totalAmount);
                                   }
                                 },
@@ -275,18 +324,17 @@ class ReceiptView extends StatelessWidget {
                         'Balance: GHS ${(receipt.isCustomerCopy ? _calculateTotalAmount(receipt.items, false) : receipt.sale.totalAmount - controller.paidAmount.value).toStringAsFixed(2)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color:
-                              (receipt.isCustomerCopy
-                                          ? _calculateTotalAmount(
-                                                receipt.items,
-                                                false,
-                                              ) -
-                                              controller.paidAmount.value
-                                          : receipt.sale.totalAmount -
-                                              controller.paidAmount.value) >
-                                      0
-                                  ? Colors.red
-                                  : Colors.green,
+                          color: (receipt.isCustomerCopy
+                                      ? _calculateTotalAmount(
+                                            receipt.items,
+                                            false,
+                                          ) -
+                                          controller.paidAmount.value
+                                      : receipt.sale.totalAmount -
+                                          controller.paidAmount.value) >
+                                  0
+                              ? Colors.red
+                              : Colors.green,
                         ),
                       ),
 
@@ -303,8 +351,10 @@ class ReceiptView extends StatelessWidget {
 
               // Action Buttons
               if (receipt.isPreviewMode) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.spaceEvenly,
                   children: [
                     ElevatedButton.icon(
                       icon: const Icon(Icons.sync),
@@ -320,12 +370,20 @@ class ReceiptView extends StatelessWidget {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.print),
                       label: const Text('Print'),
-                      onPressed: onPrint as void Function()?,
+                      onPressed: _printReceipt,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.save),
                       label: const Text('Save Sale'),
                       onPressed: onSave as void Function()?,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -336,4 +394,16 @@ class ReceiptView extends StatelessWidget {
       ),
     );
   }
+}
+
+class ReceiptItem {
+  final String name;
+  final double quantity;
+  final double price;
+
+  ReceiptItem({
+    required this.name,
+    required this.quantity,
+    required this.price,
+  });
 }
