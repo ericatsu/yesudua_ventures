@@ -138,14 +138,6 @@ class ReceiptView extends StatelessWidget {
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
-                            // if (!receipt.isCustomerCopy)
-                            //   const Padding(
-                            //     padding: EdgeInsets.all(8.0),
-                            //     child: Text(
-                            //       'Bought',
-                            //       style: TextStyle(fontWeight: FontWeight.bold),
-                            //     ),
-                            //   ),
                           ].where((widget) => widget != null).toList(),
                     ),
 
@@ -207,41 +199,6 @@ class ReceiptView extends StatelessWidget {
                                       .toStringAsFixed(2),
                                 ),
                               ),
-                              // if (!receipt.isCustomerCopy)
-                              //   Padding(
-                              //     padding: const EdgeInsets.all(8.0),
-                              //     child:
-                              //         receipt.isPreviewMode && allowEditing
-                              //             ? TextFormField(
-                              //               initialValue:
-                              //                   item.boughtPrice.toString(),
-                              //               keyboardType: TextInputType.number,
-                              //               decoration: const InputDecoration(
-                              //                 isDense: true,
-                              //                 contentPadding:
-                              //                     EdgeInsets.symmetric(
-                              //                       horizontal: 8,
-                              //                       vertical: 8,
-                              //                     ),
-                              //                 border: OutlineInputBorder(),
-                              //               ),
-                              //               onChanged: (value) {
-                              //                 if (value.isNotEmpty) {
-                              //                   final newBoughtPrice =
-                              //                       double.tryParse(value) ??
-                              //                       item.boughtPrice;
-                              //                   controller
-                              //                       .updateItemBoughtPrice(
-                              //                         index,
-                              //                         newBoughtPrice,
-                              //                       );
-                              //                 }
-                              //               },
-                              //             )
-                              //             : Text(
-                              //               item.boughtPrice.toStringAsFixed(2),
-                              //             ),
-                              //   ),
                             ]
                       );
                     }),
@@ -333,17 +290,9 @@ class ReceiptView extends StatelessWidget {
                         ),
                       ),
 
-                      // Show profit only in internal copy
                       if (!receipt.isCustomerCopy) ...[
                         const SizedBox(height: 10),
                         const Divider(),
-                        // Text(
-                        //   'Total Profit: GHS ${receipt.totalProfit.toStringAsFixed(2)}',
-                        //   style: const TextStyle(
-                        //     fontWeight: FontWeight.bold,
-                        //     color: Colors.blue,
-                        //   ),
-                        // ),
                       ],
                     ],
                   ),
@@ -381,16 +330,6 @@ class ReceiptView extends StatelessWidget {
                   ],
                 ),
               ],
-
-              const SizedBox(height: 20),
-
-              // Footer
-              const Center(
-                child: Text(
-                  'Thank you for your business!',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ),
             ],
           ),
         ),
