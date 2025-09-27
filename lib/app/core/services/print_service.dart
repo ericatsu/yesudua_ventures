@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/widgets.dart';
 import 'package:printing/printing.dart';
 import 'package:yesudua_ventures/app/modules/sales/widgets/receipt_view.dart';
 
@@ -53,12 +52,9 @@ class Receipt {
       pw.Page(
         pageFormat: pageFormat,
         theme: pw.ThemeData.withFont(
-          base: Font.ttf(await rootBundle.load("assets/fonts/OpenSans-Regular.ttf")),
-          bold: Font.ttf(await rootBundle.load("assets/fonts/OpenSans-Bold.ttf")),
-          italic: Font.ttf(await rootBundle.load("assets/fonts/OpenSans-Italic.ttf")),
-          boldItalic: Font.ttf(
-            await rootBundle.load("assets/fonts/OpenSans-BoldItalic.ttf"),
-          ),
+          base: await PdfGoogleFonts.robotoRegular(),
+          bold: await PdfGoogleFonts.robotoBold(),
+          italic: await PdfGoogleFonts.robotoItalic(),
         ),
         margin: pw.EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 20),
         build:
