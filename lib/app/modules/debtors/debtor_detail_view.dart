@@ -81,7 +81,7 @@ class DebtorDetailView extends GetView<DebtorsController> {
             children: [
               // Debtor Info Card
               Card(
-                elevation: 3,
+                elevation: 2,
                 margin: EdgeInsets.zero,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -92,14 +92,14 @@ class DebtorDetailView extends GetView<DebtorsController> {
                         child: Column(
                           children: [
                             CircleAvatar(
-                              radius: 36,
+                              radius: 30,
                               backgroundColor: Colors.blue.shade100,
                               child: Text(
                                 debtor.name.isNotEmpty
                                     ? debtor.name[0].toUpperCase()
                                     : '?',
                                 style: const TextStyle(
-                                  fontSize: 36,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue,
                                 ),
@@ -109,26 +109,41 @@ class DebtorDetailView extends GetView<DebtorsController> {
                             Text(
                               debtor.name,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               debtor.contact,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 color: Colors.grey.shade700,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       const Divider(),
                       const SizedBox(height: 8),
+
                       Text(
                         'Total Debt: GHS ${debtor.totalDebt.toStringAsFixed(2)}',
                       ),
+
+                      const SizedBox(height: 4),
+                      // Display items information
+                      if (controller.debtorItems.isNotEmpty) ...[
+                        Text('Items Purchased: ${_getItemNames()}'),
+                        const SizedBox(height: 4),
+                        Text('Categories: ${_getCategoryNames()}'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Total Items: ${controller.totalItemsQuantity.toStringAsFixed(1)}',
+                        ),
+                      ] else
+                        const Text('Items: Loading...'),
+
                       const SizedBox(height: 4),
                       Text(
                         'Amount Paid: GHS ${debtor.paidAmount.toStringAsFixed(2)}',
@@ -155,11 +170,11 @@ class DebtorDetailView extends GetView<DebtorsController> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // New Payment Section
               Card(
-                elevation: 3,
+                elevation: 2,
                 margin: EdgeInsets.zero,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -169,11 +184,11 @@ class DebtorDetailView extends GetView<DebtorsController> {
                       const Text(
                         'Record New Payment',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
@@ -187,6 +202,7 @@ class DebtorDetailView extends GetView<DebtorsController> {
                                 labelText: 'Payment Amount (GHS)',
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.payments_outlined),
+                                isDense: true,
                               ),
                               onChanged: (value) {
                                 controller.newPaymentAmount.value =
@@ -194,7 +210,7 @@ class DebtorDetailView extends GetView<DebtorsController> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed:
                                 debtor.outstandingBalance > 0
@@ -251,12 +267,12 @@ class DebtorDetailView extends GetView<DebtorsController> {
                                       }
                                     }
                                     : null,
-                            icon: const Icon(Icons.check),
-                            label: const Text('Record Payment'),
+                            icon: const Icon(Icons.check, size: 18),
+                            label: const Text('Record'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 16,
+                                vertical: 12,
+                                horizontal: 12,
                               ),
                             ),
                           ),
@@ -273,24 +289,27 @@ class DebtorDetailView extends GetView<DebtorsController> {
                           Colors.green,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Text(
                         debtor.totalDebt > 0
                             ? '${(debtor.paidAmount / debtor.totalDebt * 100).toStringAsFixed(1)}% paid'
                             : '0.0% paid',
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Payment History
               const Text(
                 'Payment History',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
 
@@ -328,6 +347,7 @@ class DebtorDetailView extends GetView<DebtorsController> {
                         leading: const Icon(
                           Icons.receipt_long,
                           color: Colors.green,
+                          size: 20,
                         ),
                         title: Text(
                           'GHS ${payment.amountPaid.toStringAsFixed(2)}',
@@ -343,5 +363,22 @@ class DebtorDetailView extends GetView<DebtorsController> {
         );
       }),
     );
+  }
+
+  String _getItemNames() {
+    if (controller.debtorItems.isEmpty) return 'None';
+    return controller.debtorItems
+        .map((item) => item.itemName ?? 'Unknown')
+        .toSet()
+        .join(', ');
+  }
+
+  String _getCategoryNames() {
+    if (controller.debtorItems.isEmpty) return 'None';
+    return controller.debtorItems
+        .where((item) => item.categoryName != null)
+        .map((item) => item.categoryName!)
+        .toSet()
+        .join(', ');
   }
 }

@@ -3,6 +3,8 @@ import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 import 'package:yesudua_ventures/app/data/models/sales_model.dart';
 import 'package:yesudua_ventures/app/data/repositories/inventory_repository.dart';
 import 'package:yesudua_ventures/app/data/repositories/sales_repository.dart';
+import 'package:yesudua_ventures/app/modules/dashboard/dashboard_controller.dart';
+import 'package:yesudua_ventures/app/modules/inventory/inventory_controller.dart';
 
 class SalesController extends GetxController {
   final SalesRepository _salesRepository;
@@ -22,6 +24,9 @@ class SalesController extends GetxController {
   final isPreviewMode = false.obs;
   final isCustomerCopy = true.obs;
   final errorMessage = ''.obs;
+
+  // Store original prices for database operations
+  final originalItemPrices = <int, double>{}.obs; // index -> original price
 
   // Selected sale for viewing details
   final selectedSale = Rxn<SaleModel>();
@@ -145,8 +150,10 @@ class SalesController extends GetxController {
         quantity: existingItem.quantity + item.quantity,
       );
     } else {
-      // Add as new item
+      // Add as new item and store original price
       selectedItems.add(item);
+      final newIndex = selectedItems.length - 1;
+      originalItemPrices[newIndex] = item.sellPrice;
     }
 
     // Update total amount
@@ -157,8 +164,24 @@ class SalesController extends GetxController {
   void removeItemFromSale(int index) {
     if (index >= 0 && index < selectedItems.length) {
       selectedItems.removeAt(index);
+      originalItemPrices.remove(index);
+      // Reindex the remaining items
+      _reindexOriginalPrices(index);
       _updateTotalAmount();
     }
+  }
+
+  // Reindex original prices after item removal
+  void _reindexOriginalPrices(int removedIndex) {
+    final newPrices = <int, double>{};
+    originalItemPrices.forEach((index, price) {
+      if (index > removedIndex) {
+        newPrices[index - 1] = price;
+      } else if (index < removedIndex) {
+        newPrices[index] = price;
+      }
+    });
+    originalItemPrices.value = newPrices;
   }
 
   // Update item quantity in current sale
@@ -170,22 +193,25 @@ class SalesController extends GetxController {
     }
   }
 
-  // Update item price in current sale
+  // Update item price in current sale (for receipt preview only)
   void updateItemPrice(int index, double newPrice) {
     if (index >= 0 && index < selectedItems.length && newPrice > 0) {
       final item = selectedItems[index];
+
+      // Store original price if not already stored
+      if (!originalItemPrices.containsKey(index)) {
+        originalItemPrices[index] = item.sellPrice;
+      }
+
+      // Update the display price
       selectedItems[index] = item.copyWith(sellPrice: newPrice);
       _updateTotalAmount();
     }
   }
 
-  // Update item bought price in receipt preview
-  void updateItemBoughtPrice(int index, double newBoughtPrice) {
-    if (index >= 0 && index < selectedItems.length && newBoughtPrice >= 0) {
-      final item = selectedItems[index];
-      selectedItems[index] = item.copyWith(boughtPrice: newBoughtPrice);
-      // No need to update total amount as bought price doesn't affect it
-    }
+  // Get original price for database operations
+  double getOriginalPrice(int index) {
+    return originalItemPrices[index] ?? selectedItems[index].sellPrice;
   }
 
   // Calculate total amount based on selected items
@@ -200,6 +226,7 @@ class SalesController extends GetxController {
   // Clear current sale
   void clearSale() {
     selectedItems.clear();
+    originalItemPrices.clear();
     customerName.value = '';
     customerContact.value = '';
     totalAmount.value = 0.0;
@@ -241,12 +268,33 @@ class SalesController extends GetxController {
     return receipt;
   }
 
-  // Toggle between customer and internal copy
-  void toggleReceiptType() {
-    if (currentReceipt.value != null) {
-      isCustomerCopy.value = !isCustomerCopy.value;
-      // Generate new receipt with updated isCustomerCopy value
-      generateReceipt(isCustomerCopy: isCustomerCopy.value);
+  // Update inventory quantities after successful sale
+  Future<void> _updateInventoryAfterSale() async {
+    for (int i = 0; i < selectedItems.length; i++) {
+      final item = selectedItems[i];
+      if (item.inventoryItemId != null) {
+        try {
+          // Find the inventory item
+          final inventoryItem = inventoryItems.firstWhere(
+            (invItem) => invItem.id == item.inventoryItemId,
+          );
+
+          // Calculate new quantity
+          final newQuantity = inventoryItem.quantity - item.quantity;
+
+          if (newQuantity < 0) {
+            // Log warning but continue with sale
+            print('Warning: Negative stock for ${item.itemName}');
+          }
+
+          // Update inventory item quantity
+          final updatedItem = inventoryItem.copyWith(quantity: newQuantity);
+          await _inventoryRepository.updateInventoryItem(updatedItem);
+        } catch (e) {
+          print('Error updating inventory for ${item.itemName}: $e');
+          // Continue with other items even if one fails
+        }
+      }
     }
   }
 
@@ -259,20 +307,38 @@ class SalesController extends GetxController {
         return false;
       }
 
-      // Create sale model
+      // Create sale items with original prices for database
+      final saleItemsForDb = <SaleItemModel>[];
+      for (int i = 0; i < selectedItems.length; i++) {
+        final item = selectedItems[i];
+        final originalPrice = getOriginalPrice(i);
+
+        saleItemsForDb.add(item.copyWith(sellPrice: originalPrice));
+      }
+
+      // Calculate total with original prices
+      final originalTotal = saleItemsForDb.fold(
+        0.0,
+        (sum, item) => sum + (item.quantity * item.sellPrice),
+      );
+
+      // Create sale model with original data
       final sale = SaleModel(
         customerName: customerName.value.isEmpty ? null : customerName.value,
         customerContact:
             customerContact.value.isEmpty ? null : customerContact.value,
-        totalAmount: totalAmount.value,
+        totalAmount: originalTotal,
         paidAmount: paidAmount.value,
         isPaid: isPaid.value,
         saleDate: DateTime.now(),
-        items: selectedItems,
+        items: saleItemsForDb,
       );
 
       // Save to database
       final saleId = await _salesRepository.createSale(sale);
+
+      // Update inventory quantities
+      await _updateInventoryAfterSale();
 
       // Update current sale with ID
       currentSale.value = sale.copyWith(id: saleId);
@@ -280,6 +346,28 @@ class SalesController extends GetxController {
       // Refresh sales list and inventory items
       await fetchAllSales();
       await fetchInventoryItems();
+
+      // Refresh dashboard if it exists
+      try {
+        if (Get.isRegistered<DashboardController>()) {
+          final dashboardController = Get.find<DashboardController>();
+          await dashboardController.refreshDashboard();
+        }
+      } catch (e) {
+        // Dashboard controller might not be initialized, that's okay
+        print('Dashboard controller not found: $e');
+      }
+
+      // Refresh inventory controller if it exists
+      try {
+        if (Get.isRegistered<InventoryController>()) {
+          final inventoryController = Get.find<InventoryController>();
+          await inventoryController.fetchAllInventory();
+        }
+      } catch (e) {
+        // Inventory controller might not be initialized, that's okay
+        print('Inventory controller not found: $e');
+      }
 
       // Clear the cart
       clearSale();

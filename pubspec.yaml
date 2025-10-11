@@ -37,6 +37,8 @@ dependencies:
   get: ^4.7.2
   json_annotation: ^4.9.0
   sidebarx: ^0.17.1
+  printing: ^5.14.2
+  pdf: ^3.11.3
 
 dev_dependencies:
   flutter_test:
@@ -71,3 +73,13 @@ flutter:
     - assets/images/
     - assets/icons/
     - .env
+    - assets/fonts/
+
+  fonts:
+    - family: OpenSans
+      fonts:
+        - asset: assets/fonts/OpenSans-Regular.ttf
+        - asset: assets/fonts/OpenSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/OpenSans-Italic.ttf
+        - asset: assets/fonts/OpenSans-BoldItalic.ttf

@@ -88,29 +88,6 @@ class SalesCartView extends GetView<SalesController> {
                       snackPosition: SnackPosition.BOTTOM,
                     );
                   },
-                  onSave: () async {
-                    final success = await controller.submitSale();
-                    if (success) {
-                      Get.snackbar(
-                        'Success',
-                        'Sale has been saved successfully',
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
-                      Get.back(); // Return to sales screen
-                    } else {
-                      Get.snackbar(
-                        'Error',
-                        controller.errorMessage.value.isEmpty
-                            ? 'Failed to save sale'
-                            : controller.errorMessage.value,
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: Colors.red.shade100,
-                      );
-                    }
-                  },
-                  onToggleReceiptType: () {
-                    controller.toggleReceiptType();
-                  },
                 ),
                 const SizedBox(height: 16),
                 Padding(

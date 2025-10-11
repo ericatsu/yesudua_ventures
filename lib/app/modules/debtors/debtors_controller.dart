@@ -10,6 +10,7 @@ class DebtorsController extends GetxController {
   final isLoading = false.obs;
   final debtors = <DebtorModel>[].obs;
   final selectedDebtor = Rxn<DebtorModel>();
+  final debtorItems = <SaleItemModel>[].obs;
   final errorMessage = ''.obs;
 
   // Form controller for updates
@@ -45,7 +46,7 @@ class DebtorsController extends GetxController {
   // Fetch all debtors
   Future<void> fetchAllDebtors() async {
     isLoading.value = true;
-    errorMessage.value = ''; // Clear previous errors
+    errorMessage.value = '';
     try {
       debtors.value = await _salesRepository.getAllDebtors();
     } catch (e) {
@@ -58,12 +59,15 @@ class DebtorsController extends GetxController {
   // Get debtor details by ID
   Future<void> getDebtorById(int debtorId) async {
     isLoading.value = true;
-    errorMessage.value = ''; // Clear previous errors
+    errorMessage.value = '';
     try {
       selectedDebtor.value = await _salesRepository.getDebtorById(debtorId);
       if (selectedDebtor.value != null) {
         paymentController.text = '0.0';
         newPaymentAmount.value = 0.0;
+
+        // Fetch items bought by this debtor
+        await fetchDebtorItems(debtorId);
       } else {
         errorMessage.value = 'Debtor not found';
       }
@@ -72,6 +76,20 @@ class DebtorsController extends GetxController {
       selectedDebtor.value = null; // Ensure it's null on error
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Fetch items bought by a specific debtor
+  Future<void> fetchDebtorItems(int debtorId) async {
+    try {
+      // Get the debtor's sale items through their sale ID
+      final debtor = selectedDebtor.value;
+      if (debtor != null) {
+        debtorItems.value = await _salesRepository.getSaleItems(debtor.saleId);
+      }
+    } catch (e) {
+      print('Failed to load debtor items: ${e.toString()}');
+      debtorItems.clear();
     }
   }
 
@@ -121,5 +139,15 @@ class DebtorsController extends GetxController {
   // Method to refresh data when returning to debtors list
   void refreshDebtorsList() {
     fetchAllDebtors();
+  }
+
+  // Helper method to calculate total quantity of items
+  double get totalItemsQuantity {
+    return debtorItems.fold(0.0, (sum, item) => sum + item.quantity);
+  }
+
+  // Helper method to calculate total profit from items (if needed)
+  double get totalProfit {
+    return debtorItems.fold(0.0, (sum, item) => sum + item.profit);
   }
 }
