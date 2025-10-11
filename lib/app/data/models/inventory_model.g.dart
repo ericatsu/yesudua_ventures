@@ -27,6 +27,7 @@ InventoryItemModel _$InventoryItemModelFromJson(Map<String, dynamic> json) =>
           json['updatedAt'] == null
               ? null
               : DateTime.parse(json['updatedAt'] as String),
+      imagePath: json['imagePath'] as String?,
       categoryName: json['categoryName'] as String?,
       supplierName: json['supplierName'] as String?,
     );
@@ -40,6 +41,7 @@ Map<String, dynamic> _$InventoryItemModelToJson(InventoryItemModel instance) =>
       'boughtPrice': instance.boughtPrice,
       'sellPrice': instance.sellPrice,
       'supplierId': instance.supplierId,
+      'imagePath': instance.imagePath,
       'lastRestocked': instance.lastRestocked?.toIso8601String(),
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),

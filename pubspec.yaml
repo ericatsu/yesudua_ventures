@@ -39,6 +39,8 @@ dependencies:
   sidebarx: ^0.17.1
   printing: ^5.14.2
   pdf: ^3.11.3
+  image_picker: ^1.2.0
+  file_picker: ^10.3.3
 
 dev_dependencies:
   flutter_test:

@@ -867,6 +867,17 @@ class $InventoryItemsTable extends InventoryItems
       'REFERENCES suppliers (id)',
     ),
   );
+  static const VerificationMeta _imagePathMeta = const VerificationMeta(
+    'imagePath',
+  );
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+    'image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastRestockedMeta = const VerificationMeta(
     'lastRestocked',
   );
@@ -912,6 +923,7 @@ class $InventoryItemsTable extends InventoryItems
     boughtPrice,
     sellPrice,
     supplierId,
+    imagePath,
     lastRestocked,
     createdAt,
     updatedAt,
@@ -978,6 +990,12 @@ class $InventoryItemsTable extends InventoryItems
         supplierId.isAcceptableOrUnknown(data['supplier_id']!, _supplierIdMeta),
       );
     }
+    if (data.containsKey('image_path')) {
+      context.handle(
+        _imagePathMeta,
+        imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
     if (data.containsKey('last_restocked')) {
       context.handle(
         _lastRestockedMeta,
@@ -1042,6 +1060,10 @@ class $InventoryItemsTable extends InventoryItems
         DriftSqlType.int,
         data['${effectivePrefix}supplier_id'],
       ),
+      imagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path'],
+      ),
       lastRestocked: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_restocked'],
@@ -1073,6 +1095,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
   final double boughtPrice;
   final double sellPrice;
   final int? supplierId;
+  final String? imagePath;
   final DateTime? lastRestocked;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -1084,6 +1107,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     required this.boughtPrice,
     required this.sellPrice,
     this.supplierId,
+    this.imagePath,
     this.lastRestocked,
     required this.createdAt,
     required this.updatedAt,
@@ -1099,6 +1123,9 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     map['sell_price'] = Variable<double>(sellPrice);
     if (!nullToAbsent || supplierId != null) {
       map['supplier_id'] = Variable<int>(supplierId);
+    }
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
     }
     if (!nullToAbsent || lastRestocked != null) {
       map['last_restocked'] = Variable<DateTime>(lastRestocked);
@@ -1120,6 +1147,10 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           supplierId == null && nullToAbsent
               ? const Value.absent()
               : Value(supplierId),
+      imagePath:
+          imagePath == null && nullToAbsent
+              ? const Value.absent()
+              : Value(imagePath),
       lastRestocked:
           lastRestocked == null && nullToAbsent
               ? const Value.absent()
@@ -1142,6 +1173,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       boughtPrice: serializer.fromJson<double>(json['boughtPrice']),
       sellPrice: serializer.fromJson<double>(json['sellPrice']),
       supplierId: serializer.fromJson<int?>(json['supplierId']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
       lastRestocked: serializer.fromJson<DateTime?>(json['lastRestocked']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1158,6 +1190,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       'boughtPrice': serializer.toJson<double>(boughtPrice),
       'sellPrice': serializer.toJson<double>(sellPrice),
       'supplierId': serializer.toJson<int?>(supplierId),
+      'imagePath': serializer.toJson<String?>(imagePath),
       'lastRestocked': serializer.toJson<DateTime?>(lastRestocked),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1172,6 +1205,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     double? boughtPrice,
     double? sellPrice,
     Value<int?> supplierId = const Value.absent(),
+    Value<String?> imagePath = const Value.absent(),
     Value<DateTime?> lastRestocked = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -1183,6 +1217,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     boughtPrice: boughtPrice ?? this.boughtPrice,
     sellPrice: sellPrice ?? this.sellPrice,
     supplierId: supplierId.present ? supplierId.value : this.supplierId,
+    imagePath: imagePath.present ? imagePath.value : this.imagePath,
     lastRestocked:
         lastRestocked.present ? lastRestocked.value : this.lastRestocked,
     createdAt: createdAt ?? this.createdAt,
@@ -1200,6 +1235,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
       sellPrice: data.sellPrice.present ? data.sellPrice.value : this.sellPrice,
       supplierId:
           data.supplierId.present ? data.supplierId.value : this.supplierId,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
       lastRestocked:
           data.lastRestocked.present
               ? data.lastRestocked.value
@@ -1219,6 +1255,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           ..write('boughtPrice: $boughtPrice, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('supplierId: $supplierId, ')
+          ..write('imagePath: $imagePath, ')
           ..write('lastRestocked: $lastRestocked, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -1235,6 +1272,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
     boughtPrice,
     sellPrice,
     supplierId,
+    imagePath,
     lastRestocked,
     createdAt,
     updatedAt,
@@ -1250,6 +1288,7 @@ class InventoryItem extends DataClass implements Insertable<InventoryItem> {
           other.boughtPrice == this.boughtPrice &&
           other.sellPrice == this.sellPrice &&
           other.supplierId == this.supplierId &&
+          other.imagePath == this.imagePath &&
           other.lastRestocked == this.lastRestocked &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -1263,6 +1302,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
   final Value<double> boughtPrice;
   final Value<double> sellPrice;
   final Value<int?> supplierId;
+  final Value<String?> imagePath;
   final Value<DateTime?> lastRestocked;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1274,6 +1314,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     this.boughtPrice = const Value.absent(),
     this.sellPrice = const Value.absent(),
     this.supplierId = const Value.absent(),
+    this.imagePath = const Value.absent(),
     this.lastRestocked = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1286,6 +1327,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     required double boughtPrice,
     required double sellPrice,
     this.supplierId = const Value.absent(),
+    this.imagePath = const Value.absent(),
     this.lastRestocked = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1301,6 +1343,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Expression<double>? boughtPrice,
     Expression<double>? sellPrice,
     Expression<int>? supplierId,
+    Expression<String>? imagePath,
     Expression<DateTime>? lastRestocked,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1313,6 +1356,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       if (boughtPrice != null) 'bought_price': boughtPrice,
       if (sellPrice != null) 'sell_price': sellPrice,
       if (supplierId != null) 'supplier_id': supplierId,
+      if (imagePath != null) 'image_path': imagePath,
       if (lastRestocked != null) 'last_restocked': lastRestocked,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1327,6 +1371,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     Value<double>? boughtPrice,
     Value<double>? sellPrice,
     Value<int?>? supplierId,
+    Value<String?>? imagePath,
     Value<DateTime?>? lastRestocked,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1339,6 +1384,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
       boughtPrice: boughtPrice ?? this.boughtPrice,
       sellPrice: sellPrice ?? this.sellPrice,
       supplierId: supplierId ?? this.supplierId,
+      imagePath: imagePath ?? this.imagePath,
       lastRestocked: lastRestocked ?? this.lastRestocked,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1369,6 +1415,9 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
     if (supplierId.present) {
       map['supplier_id'] = Variable<int>(supplierId.value);
     }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
     if (lastRestocked.present) {
       map['last_restocked'] = Variable<DateTime>(lastRestocked.value);
     }
@@ -1391,6 +1440,7 @@ class InventoryItemsCompanion extends UpdateCompanion<InventoryItem> {
           ..write('boughtPrice: $boughtPrice, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('supplierId: $supplierId, ')
+          ..write('imagePath: $imagePath, ')
           ..write('lastRestocked: $lastRestocked, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -4619,6 +4669,7 @@ typedef $$InventoryItemsTableCreateCompanionBuilder =
       required double boughtPrice,
       required double sellPrice,
       Value<int?> supplierId,
+      Value<String?> imagePath,
       Value<DateTime?> lastRestocked,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -4632,6 +4683,7 @@ typedef $$InventoryItemsTableUpdateCompanionBuilder =
       Value<double> boughtPrice,
       Value<double> sellPrice,
       Value<int?> supplierId,
+      Value<String?> imagePath,
       Value<DateTime?> lastRestocked,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -4757,6 +4809,11 @@ class $$InventoryItemsTableFilterComposer
 
   ColumnFilters<double> get sellPrice => $composableBuilder(
     column: $table.sellPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4906,6 +4963,11 @@ class $$InventoryItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get lastRestocked => $composableBuilder(
     column: $table.lastRestocked,
     builder: (column) => ColumnOrderings(column),
@@ -4993,6 +5055,9 @@ class $$InventoryItemsTableAnnotationComposer
 
   GeneratedColumn<double> get sellPrice =>
       $composableBuilder(column: $table.sellPrice, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastRestocked => $composableBuilder(
     column: $table.lastRestocked,
@@ -5148,6 +5213,7 @@ class $$InventoryItemsTableTableManager
                 Value<double> boughtPrice = const Value.absent(),
                 Value<double> sellPrice = const Value.absent(),
                 Value<int?> supplierId = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
                 Value<DateTime?> lastRestocked = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5159,6 +5225,7 @@ class $$InventoryItemsTableTableManager
                 boughtPrice: boughtPrice,
                 sellPrice: sellPrice,
                 supplierId: supplierId,
+                imagePath: imagePath,
                 lastRestocked: lastRestocked,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -5172,6 +5239,7 @@ class $$InventoryItemsTableTableManager
                 required double boughtPrice,
                 required double sellPrice,
                 Value<int?> supplierId = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
                 Value<DateTime?> lastRestocked = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5183,6 +5251,7 @@ class $$InventoryItemsTableTableManager
                 boughtPrice: boughtPrice,
                 sellPrice: sellPrice,
                 supplierId: supplierId,
+                imagePath: imagePath,
                 lastRestocked: lastRestocked,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

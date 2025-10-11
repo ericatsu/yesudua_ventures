@@ -127,7 +127,7 @@ class InventoryView extends GetView<InventoryController> {
                   ),
                 ],
               );
-            }
+            },
           ),
         );
       }
@@ -290,12 +290,12 @@ class InventoryView extends GetView<InventoryController> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false, // Prevent dismissing while saving
+      enableDrag: false, // Prevent dragging while saving
       builder:
           (context) => AddInventoryModal(
             controller: controller,
-            onItemAdded: () {
-              Navigator.pop(context);
-            },
+            // Remove onItemAdded callback - modal handles its own closing
           ),
     );
   }
@@ -388,7 +388,6 @@ class InventoryView extends GetView<InventoryController> {
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          // Navigate to edit screen or show edit modal
                           _showEditInventoryModal(context, item);
                         },
                         icon: const Icon(Icons.edit),
@@ -427,15 +426,14 @@ class InventoryView extends GetView<InventoryController> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false, // Prevent dismissing while saving
+      enableDrag: false, // Prevent dragging while saving
       backgroundColor: Colors.transparent,
       builder:
           (context) => AddInventoryModal(
             controller: controller,
             editItem: item,
-            onItemAdded: () {
-              // Item updated callback
-              Navigator.pop(context);
-            },
+            // Remove onItemAdded callback - modal handles its own closing
           ),
     );
   }
@@ -465,6 +463,8 @@ class InventoryView extends GetView<InventoryController> {
                       'Success',
                       'Item deleted successfully',
                       snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.green,
+                      colorText: Colors.white,
                     );
                   }
                 },

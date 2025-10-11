@@ -64,6 +64,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       boughtPrice: item.boughtPrice,
       sellPrice: item.sellPrice,
       supplierId: item.supplierId,
+      imagePath: item.imagePath,
       lastRestocked: item.lastRestocked,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -94,8 +95,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
   }
 
   SupplyHistoryModel _supplyHistoryToModel(
-    SupplyHistoryData
-    history, { // Note the type change: SupplyHistoryData instead of SupplyHistory
+    SupplyHistoryData history, {
     String? itemName,
     String? supplierName,
   }) {
@@ -172,6 +172,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
                 item.supplierId != null
                     ? Value(item.supplierId!)
                     : const Value.absent(),
+            imagePath:
+                item.imagePath != null
+                    ? Value(item.imagePath!)
+                    : const Value.absent(),
             lastRestocked:
                 item.lastRestocked != null
                     ? Value(item.lastRestocked!)
@@ -195,6 +199,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
         supplierId:
             item.supplierId != null
                 ? Value(item.supplierId!)
+                : const Value.absent(),
+        imagePath:
+            item.imagePath != null
+                ? Value(item.imagePath!)
                 : const Value.absent(),
         lastRestocked:
             item.lastRestocked != null

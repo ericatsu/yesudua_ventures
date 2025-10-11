@@ -38,62 +38,25 @@ class AppConstants {
 
   // Updated categoryItems structure in constants.dart
 
-  static final Map<String, Map<String, String>> categoryItems = {
-    'cement': {
-      'dangote': AppAssets.dangote,
-      'ghacem': AppAssets.ghacem,
-      'supacem': AppAssets.defaultItem,
-    },
-    'timber': {
-      'hard_4x4': AppAssets.hard_4x4,
-      'soft_4x4': AppAssets.soft_4x4,
-      'hard_2x4': AppAssets.defaultItem,
-      'soft_2x4': AppAssets.defaultItem,
-    },
-    'steel': {
-      'rebar': AppAssets.steel,
-      'angle_iron': AppAssets.defaultItem,
-      'flat_bar': AppAssets.defaultItem,
-    },
-    'paint': {
-      'coral': AppAssets.coral,
-      'deluxy': AppAssets.deluxy,
-      'leyland': AppAssets.leyland,
-      'neuce': AppAssets.neuce,
-    },
-    'tools': {
-      'hammer': AppAssets.tools,
-      'screwdriver': AppAssets.defaultItem,
-      'wrench': AppAssets.defaultItem,
-    },
-    'electrical': {
-      'cable': AppAssets.electrical,
-      'switch': AppAssets.defaultItem,
-      'socket': AppAssets.defaultItem,
-    },
-    'plumbing': {
-      'pipe': AppAssets.plumbing,
-      'elbow': AppAssets.defaultItem,
-      'valve': AppAssets.defaultItem,
-    },
-    'bricks': {
-      'red_brick': AppAssets.defaultItem,
-      'concrete_block': AppAssets.defaultItem,
-    },
-    'hardware': {
-      'nail': AppAssets.defaultItem,
-      'screw': AppAssets.defaultItem,
-      'bolt': AppAssets.defaultItem,
-    },
-    'roofing': {
-      'aluminum_sheet': AppAssets.defaultItem,
-      'tile': AppAssets.defaultItem,
-    },
-    'other': {'misc': AppAssets.defaultItem},
+  static final Map<String, String> categoryDefaultImages = {
+    'Nails': AppAssets.nails,
+    'Keys': AppAssets.locks,
+    'Essah': AppAssets.soft_4x4,
+    'Paint': AppAssets.deluxy,
+    'Tools': AppAssets.tools,
+    'Dahoma': AppAssets.soft_4x4,
+    'Boards': AppAssets.soft_4x4,
+    'Plywood': AppAssets.hard_4x4,
+    'Other': AppAssets.defaultItem,
   };
 
   // Predefined categories list for easy access
-  static List<String> get categoryNames => categoryItems.keys.toList();
+  static List<String> get categoryNames => categoryDefaultImages.keys.toList();
+
+  static String getDefaultImageForCategory(String categoryName) {
+    return categoryDefaultImages[categoryName.toLowerCase()] ??
+        AppAssets.defaultItem;
+  }
 
   static const double defaultSpacing = 16.0;
   static const double sectionSpacing = 24.0;
