@@ -41,6 +41,12 @@ class DashboardController extends GetxController {
     loadDashboardData();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    loadDashboardData();
+  }
+
   // Load all dashboard data
   Future<void> loadDashboardData() async {
     isLoading.value = true;

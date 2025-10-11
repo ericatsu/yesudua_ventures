@@ -90,6 +90,11 @@ class Receipt {
                                   ),
                                 ),
                                 pw.Text(
+                                  '@${item.price.toStringAsFixed(2)}',
+                                  style: pw.TextStyle(fontSize: 11),
+                                ),
+                                pw.SizedBox(width: 8),
+                                pw.Text(
                                   'GHS ${total.toStringAsFixed(2)}',
                                   style: pw.TextStyle(fontSize: 12),
                                 ),
@@ -169,8 +174,8 @@ class Receipt {
           style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 8),
-        pw.Text('Mayera, Pokuasi, Ghana', style: pw.TextStyle(fontSize: 12)),
-        pw.Text('0243596546/0246485878', style: pw.TextStyle(fontSize: 12)),
+        pw.Text('Mayera Fase Junction', style: pw.TextStyle(fontSize: 12)),
+        pw.Text('0243596546/0556792084', style: pw.TextStyle(fontSize: 12)),
         pw.SizedBox(height: 10),
         pw.Container(
           padding: pw.EdgeInsets.symmetric(vertical: 8, horizontal: 15),
@@ -226,11 +231,10 @@ class Receipt {
           pw.Divider(thickness: 0.5, color: PdfColors.grey400),
           pw.SizedBox(height: 10),
           pw.Text(
-            'Thank you for your business!',
+            'Goods sold are not returnable, thank you.',
             style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
             textAlign: pw.TextAlign.center,
           ),
-          pw.SizedBox(height: 5),
         ],
       ),
     );

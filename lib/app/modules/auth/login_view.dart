@@ -139,9 +139,7 @@ class LoginView extends GetView<LoginController> {
                         const SizedBox(height: 16),
                         // Forgot Password Text
                         TextButton(
-                          onPressed: () {
-                            // Handle forgot password functionality
-                          },
+                          onPressed: () {},
                           child: const Text(
                             'Forgot password?',
                             style: TextStyle(

@@ -9,6 +9,9 @@ class LoginController extends GetxController {
   final RxBool obscurePassword = true.obs;
   final RxBool isLoading = false.obs;
 
+  // Set password
+  static const String _correctPassword = 'shop123';
+
   // Get sidebar controller
   final SidebarController _sidebarController = Get.find<SidebarController>();
 
@@ -29,16 +32,43 @@ class LoginController extends GetxController {
         isLoading.value = true;
 
         // Simulate login delay
-        await Future.delayed(const Duration(seconds: 2));
-        _sidebarController.showSidebar();
+        await Future.delayed(const Duration(seconds: 1));
 
-        // 2. Navigate to dashboard or sales page
-        Get.offAllNamed(AppRoutes.dashboard);
+        // Check if password is correct
+        if (passwordController.text.trim() == _correctPassword) {
+          // Show sidebar
+          _sidebarController.showSidebar();
+
+          // Navigate to dashboard
+          Get.offAllNamed(AppRoutes.dashboard);
+
+          // Show success message
+          Get.snackbar(
+            'Success',
+            'Login successful!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        } else {
+          // Show error message for incorrect password
+          Get.snackbar(
+            'Error',
+            'Incorrect password. Please try again.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+        }
       } catch (e) {
         Get.snackbar(
           'Error',
           'Login failed: ${e.toString()}',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.8),
+          colorText: Colors.white,
         );
       } finally {
         isLoading.value = false;

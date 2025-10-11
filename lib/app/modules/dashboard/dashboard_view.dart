@@ -19,13 +19,6 @@ class DashboardView extends GetView<DashboardController> {
         title: const Text('Sales Dashboard'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: controller.refreshDashboard,
-            tooltip: 'Refresh Dashboard',
-          ),
-        ],
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -137,7 +130,10 @@ class DashboardView extends GetView<DashboardController> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           gradient: LinearGradient(
-            colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+            colors: [
+              color.withValues(alpha: 0.1),
+              color.withValues(alpha: 0.05),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -276,7 +272,7 @@ class DashboardView extends GetView<DashboardController> {
             controller.changeFilter(filter);
           }
         },
-        selectedColor: Colors.blue.withOpacity(0.2),
+        selectedColor: Colors.blue.withValues(alpha: 0.2),
       ),
     );
   }
@@ -482,8 +478,8 @@ class DashboardView extends GetView<DashboardController> {
               decoration: BoxDecoration(
                 color:
                     sale.isPaid
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
