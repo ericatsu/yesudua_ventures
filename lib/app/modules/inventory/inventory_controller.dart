@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:yesudua_ventures/app/core/utils/constants.dart';
+import 'package:yesudua_ventures/app/core/utils/assets.dart';
 import 'package:yesudua_ventures/app/data/models/inventory_model.dart';
 import 'package:yesudua_ventures/app/data/repositories/inventory_repository.dart';
-import 'package:yesudua_ventures/app/modules/sales/sales_controller.dart';
+import 'package:yesudua_ventures/app/core/utils/constants.dart';
 
 class InventoryController extends GetxController {
   final InventoryRepository _repository;
@@ -25,14 +25,16 @@ class InventoryController extends GetxController {
   final Rx<CategoryModel?> selectedCategory = Rx<CategoryModel?>(null);
 
   // Sort options
-  final RxString sortBy = 'name'.obs;
+  final RxString sortBy =
+      'name'.obs; // Options: 'name', 'quantity', 'sellPrice'
   final RxBool sortAscending = true.obs;
 
   // Add inventory form state management
   final RxInt selectedCategoryId = 0.obs;
   final RxnInt selectedSupplierId = RxnInt();
+  final RxString selectedProductVariant = ''.obs;
   final RxString selectedCategoryName = ''.obs;
-  final RxnString selectedImagePath = RxnString();
+  final RxString customProductName = ''.obs;
 
   // Constructor
   InventoryController(this._repository);
@@ -43,7 +45,7 @@ class InventoryController extends GetxController {
     fetchAllInventory();
     fetchAllCategories();
     fetchAllSuppliers();
-    ensurePredefinedCategories();
+    ensurecategoryItems();
 
     // Listen to changes in search query
     debounce(
@@ -94,19 +96,22 @@ class InventoryController extends GetxController {
     }
   }
 
-  Future<void> ensurePredefinedCategories() async {
+  Future<void> ensurecategoryItems() async {
     try {
       final existingCategories = await _repository.getAllCategories();
 
+      // Create a set of existing category names (case-insensitive)
       final existingCategoryNames =
           existingCategories.map((c) => c.name.toLowerCase()).toSet();
 
-      for (final categoryName in AppConstants.categoryNames) {
+      // Add any predefined categories that don't exist yet
+      for (final categoryName in AppConstants.categoryItems.keys) {
         if (!existingCategoryNames.contains(categoryName.toLowerCase())) {
           await _repository.addCategory(CategoryModel(name: categoryName));
         }
       }
 
+      // Refresh categories list
       await fetchAllCategories();
     } catch (e) {
       Get.snackbar('Error', 'Failed to initialize predefined categories: $e');
@@ -189,18 +194,15 @@ class InventoryController extends GetxController {
     }
   }
 
-  // FIXED: Add inventory item with sales controller refresh
+  // Add inventory item
   Future<bool> addInventoryItem(InventoryItemModel item) async {
     try {
       final id = await _repository.addInventoryItem(item);
       if (id > 0) {
+        // Add ID to the item
         final newItem = item.copyWith(id: id);
         inventoryItems.add(newItem);
         sortInventory();
-
-        // FIXED: Refresh sales controller if it exists
-        _refreshSalesController();
-
         Get.snackbar('Success', '${item.name} added to inventory');
         return true;
       }
@@ -211,7 +213,7 @@ class InventoryController extends GetxController {
     }
   }
 
-  // FIXED: Update inventory item with sales controller refresh
+  // Update inventory item
   Future<bool> updateInventoryItem(InventoryItemModel item) async {
     try {
       final success = await _repository.updateInventoryItem(item);
@@ -222,10 +224,6 @@ class InventoryController extends GetxController {
           inventoryItems.refresh();
           sortInventory();
         }
-
-        // FIXED: Refresh sales controller if it exists
-        _refreshSalesController();
-
         Get.snackbar('Success', '${item.name} updated');
         return true;
       }
@@ -236,16 +234,12 @@ class InventoryController extends GetxController {
     }
   }
 
-  // FIXED: Delete inventory item with sales controller refresh
+  // Delete inventory item
   Future<bool> deleteInventoryItem(int id) async {
     try {
       final success = await _repository.deleteInventoryItem(id);
       if (success) {
         inventoryItems.removeWhere((item) => item.id == id);
-
-        // FIXED: Refresh sales controller if it exists
-        _refreshSalesController();
-
         Get.snackbar('Success', 'Item deleted from inventory');
         return true;
       }
@@ -290,7 +284,7 @@ class InventoryController extends GetxController {
     }
   }
 
-  // FIXED: Restock inventory item with sales controller refresh
+  // Restock inventory item
   Future<bool> restockInventoryItem(
     int itemId,
     double quantity,
@@ -306,6 +300,7 @@ class InventoryController extends GetxController {
       );
 
       if (success) {
+        // Refresh the item after restock
         final item = await _repository.getInventoryItemById(itemId);
         if (item != null) {
           final index = inventoryItems.indexWhere((i) => i.id == itemId);
@@ -314,10 +309,6 @@ class InventoryController extends GetxController {
             inventoryItems.refresh();
           }
         }
-
-        // FIXED: Refresh sales controller if it exists
-        _refreshSalesController();
-
         Get.snackbar('Success', 'Item restocked successfully');
         return true;
       }
@@ -328,17 +319,57 @@ class InventoryController extends GetxController {
     }
   }
 
-  // Get image path for inventory item
+  // Get image path for inventory item based on category
   String getImagePathForItem(InventoryItemModel item) {
-    if (item.imagePath != null && item.imagePath!.isNotEmpty) {
-      return item.imagePath!;
+    if (item.categoryName == null) {
+      return AppConstants.categoryItems['other']?['image'] ??
+          AppAssets.defaultItem;
     }
 
-    if (item.categoryName != null) {
-      return AppConstants.getDefaultImageForCategory(item.categoryName!);
+    final categoryNameLower = item.categoryName!.toLowerCase();
+    final itemNameLower = item.name.toLowerCase();
+
+    // Check if category exists in our predefined categories
+    if (AppConstants.categoryItems.containsKey(categoryNameLower)) {
+      final variants = AppConstants.categoryItems[categoryNameLower]!;
+
+      // First, try to find exact variant match based on item name
+      for (String variant in variants.keys) {
+        if (itemNameLower.contains(variant.toLowerCase()) ||
+            variant.toLowerCase().contains(itemNameLower)) {
+          return variants[variant]!;
+        }
+      }
+
+      // If no specific variant found, return the first available image
+      if (variants.isNotEmpty) {
+        return variants.values.first;
+      }
     }
 
-    return AppConstants.getDefaultImageForCategory('other');
+    // Fallback: try to find category by partial matching
+    for (final categoryKey in AppConstants.categoryItems.keys) {
+      if (categoryNameLower.contains(categoryKey) ||
+          itemNameLower.contains(categoryKey)) {
+        final variants = AppConstants.categoryItems[categoryKey]!;
+
+        // Try to find specific variant
+        for (String variant in variants.keys) {
+          if (itemNameLower.contains(variant.toLowerCase())) {
+            return variants[variant]!;
+          }
+        }
+
+        // Return first available image for this category
+        if (variants.isNotEmpty) {
+          return variants.values.first;
+        }
+      }
+    }
+
+    // Final fallback
+    return AppConstants.categoryItems['other']?['image'] ??
+        AppAssets.defaultItem;
   }
 
   // Find category by ID
@@ -364,8 +395,9 @@ class InventoryController extends GetxController {
   void resetFormState() {
     selectedCategoryId.value = 0;
     selectedSupplierId.value = null;
+    selectedProductVariant.value = '';
     selectedCategoryName.value = '';
-    selectedImagePath.value = null;
+    customProductName.value = '';
   }
 
   // Initialize form for editing
@@ -373,12 +405,28 @@ class InventoryController extends GetxController {
     selectedCategoryId.value = item.categoryId;
     selectedSupplierId.value = item.supplierId;
     selectedCategoryName.value = item.categoryName?.toLowerCase() ?? '';
-    selectedImagePath.value = item.imagePath;
+    findMatchingVariant(item.name);
+  }
+
+  // Find matching product variant
+  void findMatchingVariant(String itemName) {
+    if (selectedCategoryName.value.isNotEmpty &&
+        AppConstants.categoryItems.containsKey(selectedCategoryName.value)) {
+      final variants = AppConstants.categoryItems[selectedCategoryName.value]!;
+      for (String variant in variants.keys) {
+        if (itemName.toLowerCase().contains(variant)) {
+          selectedProductVariant.value = variant;
+          break;
+        }
+      }
+    }
   }
 
   // Handle category change
   void onCategoryChanged(int? categoryId) {
     selectedCategoryId.value = categoryId ?? 0;
+    selectedProductVariant.value = '';
+    customProductName.value = '';
 
     if (categoryId != null) {
       final category = findCategoryById(categoryId);
@@ -388,28 +436,41 @@ class InventoryController extends GetxController {
     }
   }
 
-  // Set custom image path
-  void setImagePath(String? path) {
-    selectedImagePath.value = path;
+  // Handle product variant change
+  String onProductVariantChanged(String? variant) {
+    selectedProductVariant.value = variant ?? '';
+    if (variant != null && variant != 'custom') {
+      customProductName.value = '';
+      return variant.replaceAll('_', ' ').toUpperCase();
+    } else if (variant == 'custom') {
+      return '';
+    }
+    return '';
   }
 
-  // Get current image path (custom or default)
-  String getCurrentImagePath() {
-    if (selectedImagePath.value != null &&
-        selectedImagePath.value!.isNotEmpty) {
-      return selectedImagePath.value!;
+  // Get available variants for current category
+  Map<String, String>? getAvailableVariants() {
+    if (selectedCategoryName.value.isNotEmpty &&
+        AppConstants.categoryItems.containsKey(selectedCategoryName.value)) {
+      return AppConstants.categoryItems[selectedCategoryName.value];
     }
-
-    if (selectedCategoryName.value.isNotEmpty) {
-      return AppConstants.getDefaultImageForCategory(
-        selectedCategoryName.value,
-      );
-    }
-
-    return AppConstants.getDefaultImageForCategory('other');
+    return null;
   }
 
-  // FIXED: Save inventory item (handles both add and update) with refresh
+  // Get product image path
+  String? getProductImagePath() {
+    if (selectedCategoryName.value.isNotEmpty &&
+        selectedProductVariant.value.isNotEmpty) {
+      final variants = AppConstants.categoryItems[selectedCategoryName.value];
+      if (variants != null &&
+          variants.containsKey(selectedProductVariant.value)) {
+        return variants[selectedProductVariant.value];
+      }
+    }
+    return null;
+  }
+
+  // Save inventory item (handles both add and update)
   Future<bool> saveInventoryItem({
     required String name,
     required double quantity,
@@ -417,67 +478,49 @@ class InventoryController extends GetxController {
     required double sellPrice,
     InventoryItemModel? editItem,
   }) async {
-    try {
-      final itemData = InventoryItemModel(
-        id: editItem?.id,
-        name: name.trim(),
-        categoryId: selectedCategoryId.value,
-        quantity: quantity,
-        boughtPrice: boughtPrice,
-        sellPrice: sellPrice,
-        supplierId: selectedSupplierId.value,
-        imagePath: selectedImagePath.value,
-        lastRestocked: editItem?.lastRestocked ?? DateTime.now(),
-        categoryName: findCategoryById(selectedCategoryId.value)?.name,
-        supplierName: findSupplierById(selectedSupplierId.value)?.name,
+    final itemData = InventoryItemModel(
+      id: editItem?.id,
+      name: name.trim(),
+      categoryId: selectedCategoryId.value,
+      quantity: quantity,
+      boughtPrice: boughtPrice,
+      sellPrice: sellPrice,
+      supplierId: selectedSupplierId.value,
+      lastRestocked: editItem?.lastRestocked ?? DateTime.now(),
+      categoryName: findCategoryById(selectedCategoryId.value)?.name,
+      supplierName: findSupplierById(selectedSupplierId.value)?.name,
+    );
+
+    // Show loading indicator
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    // Save or update item
+    final success =
+        editItem != null
+            ? await updateInventoryItem(itemData)
+            : await addInventoryItem(itemData);
+
+    // Close loading indicator
+    Get.back();
+
+    if (success) {
+      // Reset form state
+      resetFormState();
+
+      // Show success message
+      Get.snackbar(
+        'Success',
+        editItem != null
+            ? 'Item updated successfully'
+            : 'Item added successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
       );
-
-      bool success;
-
-      if (editItem != null) {
-        // Update existing item
-        success = await updateInventoryItem(itemData);
-      } else {
-        // Add new item
-        final id = await _repository.addInventoryItem(itemData);
-        success = id > 0;
-
-        if (success) {
-          // Fetch the newly created item with all relations
-          final newItem = await _repository.getInventoryItemById(id);
-          if (newItem != null) {
-            inventoryItems.add(newItem);
-            sortInventory();
-          }
-        }
-      }
-
-      if (success) {
-        // Reset form state
-        resetFormState();
-
-        // FIXED: Refresh sales controller
-        _refreshSalesController();
-
-        return true;
-      }
-      return false;
-    } catch (e) {
-      debugPrint('Error saving inventory item: $e');
-      return false;
+      return true;
     }
-  }
-
-  // FIXED: Helper method to refresh sales controller
-  void _refreshSalesController() {
-    try {
-      if (Get.isRegistered<SalesController>()) {
-        final salesController = Get.find<SalesController>();
-        // Trigger refresh of inventory items in sales controller
-        salesController.fetchInventoryItems();
-      }
-    } catch (e) {
-      print('Sales controller not found or refresh failed: $e');
-    }
+    return false;
   }
 }
