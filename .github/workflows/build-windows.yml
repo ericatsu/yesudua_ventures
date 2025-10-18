@@ -2,9 +2,9 @@ name: Build Windows Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [ feat-updates ]
   pull_request:
-    branches: [ main ]
+    branches: [ feat-updates ]
 
 jobs:
   build:
