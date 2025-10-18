@@ -6,8 +6,8 @@ class AppAssets {
   static String background = '$baseImagePath/BG.png';
 
   // Construction item images
-  static String dangote = '$baseImagePath/dangote.jpeg';
-  static String ghacem = '$baseImagePath/ghacem.png';
+  static String locks = '$baseImagePath/locks.jpeg';
+  static String nails = '$baseImagePath/nails.jpeg';
   static String steel = '$baseImagePath/steel.jpeg';
   static String hard_4x4 = '$baseImagePath/hard_4x4.jpeg';
   static String soft_4x4 = '$baseImagePath/soft_4x4.jpeg';

@@ -5,11 +5,6 @@ import 'package:yesudua_ventures/app/core/utils/assets.dart';
 class AppConstants {
   static const String appName = "Yesu Dea Ventures IMS";
 
-  // Supabase
-  static const String supabaseUrl = "https://zrojtggzeaczgqgbolna.supabase.co";
-  static const String supabaseAnonKey =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb2p0Z2d6ZWFjemdxZ2JvbG5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5MTExOTksImV4cCI6MjA2MDQ4NzE5OX0.a6XVZnaxLUzjWQw-AZhuA9cHkg2s4G8QCPa9lC355kw";
-
   // Drift DB
   static const String localDbName = "inventory_management.db";
 
@@ -39,57 +34,67 @@ class AppConstants {
   // Updated categoryItems structure in constants.dart
 
   static final Map<String, Map<String, String>> categoryItems = {
-    'cement': {
-      'dangote': AppAssets.dangote,
-      'ghacem': AppAssets.ghacem,
-      'supacem': AppAssets.defaultItem,
+    'Nails': {
+      'Roofing': AppAssets.nails,
+      'Tackling': AppAssets.nails,
+      'Common_n': AppAssets.nails,
+      'Supacem': AppAssets.nails,
     },
-    'timber': {
-      'hard_4x4': AppAssets.hard_4x4,
-      'soft_4x4': AppAssets.soft_4x4,
-      'hard_2x4': AppAssets.defaultItem,
-      'soft_2x4': AppAssets.defaultItem,
+    'Essah': {
+      'Hard 4x4': AppAssets.hard_4x4,
+      'Soft 4x4': AppAssets.soft_4x4,
+      'Hard 2x4': AppAssets.defaultItem,
+      'Soft 2x4': AppAssets.defaultItem,
     },
-    'steel': {
-      'rebar': AppAssets.steel,
-      'angle_iron': AppAssets.defaultItem,
-      'flat_bar': AppAssets.defaultItem,
+    'Keys': {
+      'Jb': AppAssets.locks,
+      'Everlove': AppAssets.locks,
+      'Elephant': AppAssets.locks,
+      'Zocco': AppAssets.locks,
+      'Genesis': AppAssets.locks,
     },
-    'paint': {
-      'coral': AppAssets.coral,
-      'deluxy': AppAssets.deluxy,
-      'leyland': AppAssets.leyland,
-      'neuce': AppAssets.neuce,
+    'Paint': {
+      'White Glue': AppAssets.deluxy,
+      'Bonder': AppAssets.deluxy,
+      'Roller': AppAssets.deluxy,
+      'Super Glue': AppAssets.deluxy,
+      'Mortar': AppAssets.deluxy,
+      'Fomma': AppAssets.deluxy,
+      'Par Hock': AppAssets.deluxy,
+      'Running Oil': AppAssets.deluxy,
+      'Gold Cat 4s': AppAssets.deluxy,
+      'Top Coat 4s': AppAssets.deluxy,
     },
-    'tools': {
-      'hammer': AppAssets.tools,
-      'screwdriver': AppAssets.defaultItem,
-      'wrench': AppAssets.defaultItem,
+    'Tools': {
+      'Hammer': AppAssets.tools,
+      'Screwdriver': AppAssets.tools,
+      'Wrench': AppAssets.tools,
     },
-    'electrical': {
-      'cable': AppAssets.electrical,
-      'switch': AppAssets.defaultItem,
-      'socket': AppAssets.defaultItem,
+    'Boards': {
+      'Red': AppAssets.hard_4x4,
+      'Ofram': AppAssets.soft_4x4,
+      'Wawa': AppAssets.hard_4x4,
     },
-    'plumbing': {
-      'pipe': AppAssets.plumbing,
-      'elbow': AppAssets.defaultItem,
-      'valve': AppAssets.defaultItem,
+    'Plywood': {
+      '3/4 Plywood': AppAssets.hard_4x4,
+      '1/2 Plywood': AppAssets.soft_4x4,
+      '1/4 Plywood': AppAssets.hard_4x4,
     },
-    'bricks': {
-      'red_brick': AppAssets.defaultItem,
-      'concrete_block': AppAssets.defaultItem,
+    'Flame': {
+      '4x4 Flame': AppAssets.hard_4x4,
+      '4x3 Flame': AppAssets.soft_4x4,
+      'Door Frame': AppAssets.defaultItem,
+      'Trapdoor': AppAssets.defaultItem,
     },
-    'hardware': {
-      'nail': AppAssets.defaultItem,
-      'screw': AppAssets.defaultItem,
-      'bolt': AppAssets.defaultItem,
+    'Dahoma': {
+      '2x6 Dahoma': AppAssets.hard_4x4,
+      '2x4 Dahoma': AppAssets.soft_4x4,
+      '2x3 Dahoma': AppAssets.hard_4x4,
+      '2x2 Dahoma': AppAssets.soft_4x4,
     },
-    'roofing': {
-      'aluminum_sheet': AppAssets.defaultItem,
-      'tile': AppAssets.defaultItem,
+    'Others': {
+      'misc': AppAssets.defaultItem,
     },
-    'other': {'misc': AppAssets.defaultItem},
   };
 
   // Predefined categories list for easy access
