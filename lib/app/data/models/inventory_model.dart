@@ -11,6 +11,7 @@ class InventoryItemModel {
   final double boughtPrice;
   final double sellPrice;
   final int? supplierId;
+  final String? imagePath;
   final DateTime? lastRestocked;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -30,6 +31,7 @@ class InventoryItemModel {
     this.lastRestocked,
     this.createdAt,
     this.updatedAt,
+    this.imagePath,
     this.categoryName,
     this.supplierName,
   });
@@ -43,6 +45,7 @@ class InventoryItemModel {
     double? boughtPrice,
     double? sellPrice,
     int? supplierId,
+    String? imagePath,
     DateTime? lastRestocked,
     DateTime? createdAt,
     DateTime? updatedAt,

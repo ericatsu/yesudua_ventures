@@ -32,6 +32,7 @@ class InventoryItems extends Table {
   RealColumn get boughtPrice => real()();
   RealColumn get sellPrice => real()();
   IntColumn get supplierId => integer().references(Suppliers, #id).nullable()();
+  TextColumn get imagePath => text().nullable()();
   DateTimeColumn get lastRestocked => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();

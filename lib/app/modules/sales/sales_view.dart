@@ -101,7 +101,7 @@ class SalesView extends StatelessWidget {
                           selectedColor: Colors.orange.shade400,
                           backgroundColor: Colors.grey.shade200,
                           label: Text(
-                            category.name,
+                            category.name.toUpperCase(),
                             style: TextStyle(
                               color: isSelected ? Colors.white : Colors.black87,
                             ),

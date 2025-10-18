@@ -26,7 +26,7 @@ class SalesController extends GetxController {
   final errorMessage = ''.obs;
 
   // Store original prices for database operations
-  final originalItemPrices = <int, double>{}.obs; // index -> original price
+  final originalItemPrices = <int, double>{}.obs;
 
   // Selected sale for viewing details
   final selectedSale = Rxn<SaleModel>();
@@ -67,11 +67,14 @@ class SalesController extends GetxController {
     }
   }
 
-  // Fetch all inventory items
+  // FIXED: Fetch all inventory items with proper refresh
   Future<void> fetchInventoryItems() async {
     isLoading.value = true;
     try {
-      inventoryItems.value = await _inventoryRepository.getAllInventoryItems();
+      // Always get fresh data from repository
+      final items = await _inventoryRepository.getAllInventoryItems();
+      inventoryItems.value = items;
+      inventoryItems.refresh(); // Force UI update
     } catch (e) {
       errorMessage.value = 'Failed to load inventory: ${e.toString()}';
     } finally {
@@ -119,7 +122,6 @@ class SalesController extends GetxController {
     try {
       selectedSale.value = await _salesRepository.getSaleById(saleId);
 
-      // Also fetch debtor information if available
       if (selectedSale.value != null && !selectedSale.value!.isPaid) {
         selectedSaleDebtor.value = await _salesRepository.getDebtorForSale(
           saleId,
@@ -136,7 +138,6 @@ class SalesController extends GetxController {
 
   // Add item to current sale
   void addItemToSale(SaleItemModel item) {
-    // Check if we already have this item in the list
     final existingItemIndex = selectedItems.indexWhere(
       (i) =>
           i.inventoryItemId == item.inventoryItemId &&
@@ -144,19 +145,16 @@ class SalesController extends GetxController {
     );
 
     if (existingItemIndex >= 0) {
-      // Update existing item quantity
       final existingItem = selectedItems[existingItemIndex];
       selectedItems[existingItemIndex] = existingItem.copyWith(
         quantity: existingItem.quantity + item.quantity,
       );
     } else {
-      // Add as new item and store original price
       selectedItems.add(item);
       final newIndex = selectedItems.length - 1;
       originalItemPrices[newIndex] = item.sellPrice;
     }
 
-    // Update total amount
     _updateTotalAmount();
   }
 
@@ -165,7 +163,6 @@ class SalesController extends GetxController {
     if (index >= 0 && index < selectedItems.length) {
       selectedItems.removeAt(index);
       originalItemPrices.remove(index);
-      // Reindex the remaining items
       _reindexOriginalPrices(index);
       _updateTotalAmount();
     }
@@ -198,12 +195,10 @@ class SalesController extends GetxController {
     if (index >= 0 && index < selectedItems.length && newPrice > 0) {
       final item = selectedItems[index];
 
-      // Store original price if not already stored
       if (!originalItemPrices.containsKey(index)) {
         originalItemPrices[index] = item.sellPrice;
       }
 
-      // Update the display price
       selectedItems[index] = item.copyWith(sellPrice: newPrice);
       _updateTotalAmount();
     }
@@ -240,7 +235,6 @@ class SalesController extends GetxController {
 
   // Generate receipt for preview
   ReceiptModel generateReceipt({bool isCustomerCopy = true}) {
-    // Create a sale model with current data
     final sale = SaleModel(
       customerName: customerName.value.isEmpty ? null : customerName.value,
       customerContact:
@@ -252,7 +246,6 @@ class SalesController extends GetxController {
       items: selectedItems,
     );
 
-    // Create receipt model
     final receipt = ReceiptModel(
       sale: sale,
       items: selectedItems,
@@ -268,43 +261,74 @@ class SalesController extends GetxController {
     return receipt;
   }
 
-  // Update inventory quantities after successful sale
+  // FIXED: Update inventory quantities after successful sale
   Future<void> _updateInventoryAfterSale() async {
     for (int i = 0; i < selectedItems.length; i++) {
       final item = selectedItems[i];
       if (item.inventoryItemId != null) {
         try {
-          // Find the inventory item
-          final inventoryItem = inventoryItems.firstWhere(
-            (invItem) => invItem.id == item.inventoryItemId,
+          // Get fresh inventory item from repository
+          final inventoryItem = await _inventoryRepository.getInventoryItemById(
+            item.inventoryItemId!,
           );
 
-          // Calculate new quantity
-          final newQuantity = inventoryItem.quantity - item.quantity;
+          if (inventoryItem != null) {
+            final newQuantity = inventoryItem.quantity - item.quantity;
 
-          if (newQuantity < 0) {
-            // Log warning but continue with sale
-            print('Warning: Negative stock for ${item.itemName}');
+            if (newQuantity < 0) {
+              print('Warning: Negative stock for ${item.itemName}');
+            }
+
+            // Update inventory item quantity
+            final updatedItem = inventoryItem.copyWith(quantity: newQuantity);
+            await _inventoryRepository.updateInventoryItem(updatedItem);
+
+            // FIXED: Update local inventory list immediately
+            final localIndex = inventoryItems.indexWhere(
+              (invItem) => invItem.id == item.inventoryItemId,
+            );
+            if (localIndex != -1) {
+              inventoryItems[localIndex] = updatedItem;
+            }
           }
-
-          // Update inventory item quantity
-          final updatedItem = inventoryItem.copyWith(quantity: newQuantity);
-          await _inventoryRepository.updateInventoryItem(updatedItem);
         } catch (e) {
           print('Error updating inventory for ${item.itemName}: $e');
-          // Continue with other items even if one fails
         }
       }
     }
+
+    // FIXED: Force refresh of inventory items list
+    inventoryItems.refresh();
   }
 
-  // Submit sale after receipt approval
+  // FIXED: Submit sale after receipt approval
   Future<bool> submitSale() async {
     isLoading.value = true;
     try {
       if (selectedItems.isEmpty) {
         errorMessage.value = 'No items added to sale';
         return false;
+      }
+
+      // Validate inventory availability before proceeding
+      for (int i = 0; i < selectedItems.length; i++) {
+        final item = selectedItems[i];
+        if (item.inventoryItemId != null) {
+          final inventoryItem = await _inventoryRepository.getInventoryItemById(
+            item.inventoryItemId!,
+          );
+
+          if (inventoryItem == null) {
+            errorMessage.value = 'Item ${item.itemName} not found in inventory';
+            return false;
+          }
+
+          if (inventoryItem.quantity < item.quantity) {
+            errorMessage.value =
+                'Insufficient stock for ${item.itemName}. Available: ${inventoryItem.quantity}';
+            return false;
+          }
+        }
       }
 
       // Create sale items with original prices for database
@@ -337,36 +361,37 @@ class SalesController extends GetxController {
       // Save to database
       final saleId = await _salesRepository.createSale(sale);
 
-      // Update inventory quantities
+      // FIXED: Update inventory quantities - this is critical!
       await _updateInventoryAfterSale();
 
       // Update current sale with ID
       currentSale.value = sale.copyWith(id: saleId);
 
-      // Refresh sales list and inventory items
+      // FIXED: Refresh everything in the correct order
+      // 1. Refresh sales list
       await fetchAllSales();
+
+      // 2. Force refresh inventory items to show updated quantities
       await fetchInventoryItems();
 
-      // Refresh dashboard if it exists
-      try {
-        if (Get.isRegistered<DashboardController>()) {
-          final dashboardController = Get.find<DashboardController>();
-          await dashboardController.refreshDashboard();
-        }
-      } catch (e) {
-        // Dashboard controller might not be initialized, that's okay
-        print('Dashboard controller not found: $e');
-      }
-
-      // Refresh inventory controller if it exists
+      // 3. Refresh inventory controller if it exists
       try {
         if (Get.isRegistered<InventoryController>()) {
           final inventoryController = Get.find<InventoryController>();
           await inventoryController.fetchAllInventory();
         }
       } catch (e) {
-        // Inventory controller might not be initialized, that's okay
         print('Inventory controller not found: $e');
+      }
+
+      // 4. Refresh dashboard if it exists
+      try {
+        if (Get.isRegistered<DashboardController>()) {
+          final dashboardController = Get.find<DashboardController>();
+          await dashboardController.refreshDashboard();
+        }
+      } catch (e) {
+        print('Dashboard controller not found: $e');
       }
 
       // Clear the cart
@@ -396,7 +421,6 @@ class SalesController extends GetxController {
       );
 
       if (success) {
-        // Refresh sales list and selected sale
         await fetchAllSales();
         if (selectedSale.value != null && selectedSale.value!.id == saleId) {
           await getSaleById(saleId);
@@ -419,17 +443,25 @@ class SalesController extends GetxController {
       final success = await _salesRepository.deleteSale(saleId);
 
       if (success) {
-        // Refresh sales list
         await fetchAllSales();
 
-        // Clear selected sale if it was deleted
         if (selectedSale.value != null && selectedSale.value!.id == saleId) {
           selectedSale.value = null;
           selectedSaleDebtor.value = null;
         }
 
-        // Refresh inventory items
+        // FIXED: Refresh inventory after sale deletion
         await fetchInventoryItems();
+
+        // Refresh inventory controller if exists
+        try {
+          if (Get.isRegistered<InventoryController>()) {
+            final inventoryController = Get.find<InventoryController>();
+            await inventoryController.fetchAllInventory();
+          }
+        } catch (e) {
+          print('Inventory controller not found: $e');
+        }
       }
 
       return success;
