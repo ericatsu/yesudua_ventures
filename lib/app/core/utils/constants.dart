@@ -98,12 +98,7 @@ class AppConstants {
   };
 
   // Predefined categories list for easy access
-  static List<String> get categoryNames => categoryDefaultImages.keys.toList();
-
-  static String getDefaultImageForCategory(String categoryName) {
-    return categoryDefaultImages[categoryName.toLowerCase()] ??
-        AppAssets.defaultItem;
-  }
+  static List<String> get categoryNames => categoryItems.keys.toList();
 
   static const double defaultSpacing = 16.0;
   static const double sectionSpacing = 24.0;
